@@ -24,7 +24,7 @@ import DocOpt
 
 args = DocOpt.docopt(
     doc, 
-    isinteractive() ? "temp-data/sim_test.jls -p 2 -s 2 -t 2 --numprocs=2 --pftdpw-iter=2" : ARGS, 
+    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=2 --pftdpw-iter=2" : ARGS, 
     version = v"0.1.0"
 )
 
@@ -178,11 +178,13 @@ function create_sim_data_getter(actual_reward_only = false)
     function inner_get_sim_data(sim::POMDPTools.Sim, hist::POMDPTools.SimHistory)
         actions = collect(POMDPSimulators.action_hist(hist)) 
         beliefs = collect(POMDPSimulators.belief_hist(hist))
+        states = collect(POMDPSimulators.state_hist(hist))
 
         sim_data = (
-            state = collect(POMDPSimulators.state_hist(hist)),
+            state = states,
             action = actions, 
             actual_reward = collect(POMDPSimulators.reward_hist(hist)),
+            actual_ex_ante_reward = [expectedutility(rewardmodel(sim.pomdp), dgp(s), a) for (s, a) in zip(states, actions)],
             expected_reward = [expectedutility(rewardmodel(sim.pomdp), b, a) for (b, a) in zip(beliefs, actions)],
             total_undiscounted_actual_reward = POMDPSimulators.undiscounted_reward(hist)
         )
