@@ -33,3 +33,7 @@ renv/
 quarto/
 
 .Rhistory
+
+.vscode/
+
+diagnose_files/
