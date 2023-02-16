@@ -128,7 +128,8 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     random_dgp = deepcopy(planned_dgp)
     freq_dgp = deepcopy(planned_dgp)
 
-    init_s = Base.rand(RNG, planned_dgp; state_chain_length = NUM_SIM_STEPS + 1) # One more for the pre-state
+    pre_s = Base.rand(RNG, planned_dgp; state_chain_length = NUM_SIM_STEPS + 1) # One more for the pre-state
+    init_s = next_state(pre_s)
 
     planned_mdp = KBanditFundingMDP{SeparateImplementEvalAction}(
         util_model,
@@ -136,7 +137,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
         50,
         explore_only_actionset_factory,
         RNG,
-        init_s
+        pre_s
     )
     
     bayes_b = nothing
@@ -157,7 +158,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
         50,
         select_subset_actionset_factory,
         RNG,
-        init_s 
+        pre_s 
     )
 
     greedy_pomdp = KBanditFundingPOMDP{ImplementOnlyAction}(greedy_mdp, bayes_b) 
