@@ -1,0 +1,316 @@
+---
+title: "Comparing Planning Algorithms"
+format: 
+  html:
+    code-fold: true
+    fig-width: 10 
+---
+
+```{r}
+#| label: r-setup
+#| include: false
+
+library(JuliaCall)
+library(tidyverse)
+library(posterior)
+library(tidybayes)
+
+theme_set(theme_minimal())
+```
+
+```{julia}
+#| label: julia-setup
+#| include: false
+
+import Pkg
+Pkg.activate(".")
+
+using FundingPOMDPs
+using MCTS, POMDPs, D3Trees
+using DataFrames, DataFramesMeta
+using StatsBase, Gadfly, Pipe, Serialization
+using ParticleFilters
+using Distributions
+
+import Arrow
+import SplitApplyCombine
+
+include("diag_util.jl")
+```
+
+```{julia}
+#| label: params
+
+sim_file_suffix = "_test2"
+util_model = ExponentialUtilityModel(0.25)
+accum_rewards = true 
+maxstep = 15
+use_ex_ante_reward = true 
+nprograms = 10
+actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |> FundingPOMDPs.actions(_).actions
+```
+
+```{r}
+maxstep <- julia_eval("maxstep")
+nprograms <- julia_eval("nprograms")
+```
+
+```{julia}
+#| label: load-sim-data
+#| output: false
+
+all_sim_data = @pipe deserialize("temp-data/sim$(sim_file_suffix).jls")  
+  
+greedy_sim_data = @subset(all_sim_data, :plan_type .== "none")
+pftdpw_sim_data = @subset(all_sim_data, :plan_type .== "pftdpw")
+random_sim_data = @subset(all_sim_data, :plan_type .== "random")
+freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
+```
+
+```{julia}
+#| output: false
+
+do_nothing_reward = begin 
+    do_nothing = ImplementEvalAction()
+
+    @pipe greedy_sim_data |>
+        dropmissing(_, :state) |>
+        @select(
+            _, 
+            :actual_reward = [expectedutility.(Ref(util_model), states[Not(end)], Ref(do_nothing)) for states in :state],
+            :actual_ex_ante_reward = [expectedutility.(Ref(util_model), dgp.(states[Not(end)]), Ref(do_nothing)) for states in :state],
+            :plan_type = "no impl"
+        )  
+end
+
+do_best_reward = @pipe greedy_sim_data |>
+    dropmissing(_, :state) |> 
+    @select(
+        _,
+        :actual_reward = map(get_program_reward, :state),
+        :actual_ex_ante_reward = map(s -> get_program_reward(s, eval_getter = dgp), :state),
+        :plan_type = "best"
+    )
+
+util_data = @pipe all_sim_data |> 
+    vcat(_, do_best_reward, do_nothing_reward, cols = :union) |> 
+    @select!(_, :plan_type, :actual_reward, :actual_ex_ante_reward, :step = repeat([collect(1:maxstep)], length(:plan_type))) |> 
+    groupby(_, :plan_type) |> 
+    transform!(_, eachindex => :sim) |> 
+    flatten(_, Not([:plan_type, :sim]))
+```
+
+```{julia}
+#| eval: false
+
+vg_util_diff_summ = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data] |> 
+  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
+  vcat(_, [use_ex_ante_reward ? do_ex_ante_best_reward : do_ex_post_best_reward]) |> 
+  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(greedy_sim_data.actual_reward); accum = accum_rewards, maxstep = maxstep) |> 
+  vcat(_...; source = :algo => ["planned", "random", "freq", "ex post best"])
+
+vmax_util_diff_summ = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data, greedy_sim_data] |> 
+  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
+  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_ex_post_best_reward); accum = accum_rewards, maxstep = maxstep) |> 
+  vcat(_...; source = :algo => ["planned", "random", "freq", "greedy"])
+
+util_diff_summ = @pipe [greedy_sim_data, pftdpw_sim_data, random_sim_data, freq_sim_data] |> 
+  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
+  vcat(_, [use_ex_ante_reward ? do_ex_ante_best_reward : do_ex_post_best_reward]) |> 
+  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_nothing_reward); accum = accum_rewards, maxstep = maxstep) |>
+  vcat(_...; source = :algo => ["greedy", "planned", "random", "freq", "ex post best"])  
+```
+```{julia}
+#| eval: false
+#| 
+util_diff = @pipe all_sim_data |> 
+    vcat(_, do_best_reward, cols = :union) |> 
+    groupby(_, :plan_type) |>
+    @select(
+        _,
+        :plan_type,
+        :ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = false, maxstep = maxstep),
+        :accum_ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = true, maxstep = maxstep),
+        :ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = false, maxstep = maxstep),
+        :accum_ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = true, maxstep = maxstep),
+        :step = repeat([collect(1:maxstep)], length(:plan_type))
+    ) |> 
+    transform!(_, eachindex => :sim) |> 
+    flatten(_, Not([:plan_type, :sim])) 
+```
+
+```{r}
+util_data <- julia_eval("util_data")
+
+vn_util_diff <- util_data |> 
+  unnest(c(actual_reward, actual_ex_ante_reward)) |> 
+  pivot_longer(!c(sim, plan_type, step), names_to = "reward_type", names_pattern = r"{actual_(.*)_reward}", values_to = "reward") |> 
+  mutate(reward_type = coalesce(reward_type, "ex_post")) %>%  
+  left_join(filter(., fct_match(plan_type, "no impl")) |> select(!plan_type), by = c("reward_type", "sim", "step"), suffix = c("", "_no_impl")) |> 
+  mutate(reward_diff = reward - reward_no_impl) |> 
+  arrange(step) |> 
+  group_by(plan_type, reward_type, sim) |> 
+  mutate(accum_reward_diff = cumsum(reward_diff)) |> 
+  ungroup() |> 
+  pivot_longer(c(reward_diff, accum_reward_diff), names_to = "accum", values_to = "reward_diff") |> 
+  mutate(accum = str_detect(accum, fixed("accum")))
+```
+
+```{r}
+vn_util_diff |> 
+  filter(!fct_match(plan_type, "no impl"), accum) |> 
+  ggplot(aes(step)) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("Accumulated Utility Difference") +
+  scale_linetype_discrete("") +
+  scale_color_discrete(
+    "Planning Type", 
+    labels = c("best" = "Ex Ante Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random"), 
+    aesthetics = c("color", "fill")
+  ) +
+  facet_wrap(vars(reward_type), ncol = 1, labeller = as_labeller(c(ex_ante = "Ex Ante", ex_post = "Ex Post"))) +
+  labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
+  theme(panel.grid.minor.x = element_blank()) +
+  NULL
+```
+
+```{r}
+vn_util_diff |> 
+  filter(step == maxstep, accum, fct_match(reward_type, "ex_ante")) |> 
+  ggplot(aes(y = plan_type, x = reward_diff)) +
+  geom_col(alpha = 0.5) +
+  NULL
+```
+
+```{julia}
+all_rewards = @pipe all_sim_data |> 
+    @subset(_, :plan_type .== "none") |> 
+    get_rewards_data.(_.state, Ref(actlist), Ref(util_model)) |>
+    [@transform!(rd[2], :sim = rd[1]) for rd in enumerate(_)] |>
+    vcat(_...) |>
+    insertcols!(_, :reward_type => "actual")
+
+obs_act = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data] |> 
+  [vcat(get_actions_data.(getindex(d, :, :action))..., source = :sim) for d in _] |> 
+  vcat(_..., source = :algo => ["pftdpw", "random", "freq"])
+```
+
+```{r}
+all_rewards <- julia_eval("all_rewards") 
+obs_act <- julia_eval("obs_act")
+
+ex_ante_reward_data <- all_rewards |> 
+  filter(step == maxstep) |> 
+  group_by(sim) |> 
+  mutate(ex_ante_best = ex_ante_reward >= max(ex_ante_reward)) |> 
+  ungroup()  
+```
+
+```{r, fig.height=8}
+ex_ante_reward_data |>
+  mutate(actprog = factor(actprog)) |> 
+  ggplot(aes(ex_ante_reward, tidytext::reorder_within(actprog, ex_ante_reward, sim))) +
+  geom_col(aes(fill = ex_ante_best), alpha = 0.5, position = "dodge", show.legend = FALSE) +
+  tidytext::scale_y_reordered() +
+  scale_fill_manual("", values = c(`TRUE` = "darkred", `FALSE` = "black")) +
+  facet_wrap(vars(sim), scales = "free")
+```
+
+```{r, fig.width=10, fig.height=12}
+#| fig-height: 10 
+obs_act |>
+  pivot_longer(c(implement_programs, eval_programs), names_to = "action_type", names_pattern = r"{(.+)_programs}", values_to = "pid") |> 
+  ggplot(aes(step, pid, color = action_type)) +
+  geom_step() +
+  geom_point() +
+  geom_hline(
+    aes(yintercept = actprog), 
+    linewidth = 2, alpha = 0.25,
+    data = ex_ante_reward_data |> 
+      filter(ex_ante_best)
+  ) +
+  facet_grid(cols = vars(algo), rows = vars(sim)) +
+  scale_x_continuous(breaks = seq(maxstep)) +
+  scale_y_continuous(breaks = seq(0:(nprograms)), c(0, 10)) +
+  theme(panel.grid.minor = element_blank(), legend.position = "top")
+```
+
+```{julia}
+#| output: false
+  
+dgp_data = @pipe collect(skipmissing(pftdpw_sim_data.state)) |> 
+  first.(_) |> 
+  dgp.(_) |> 
+  getproperty.(_, :programdgps) |> 
+  DataFrame.(_) |> 
+  vcat(_..., source = :sim)
+```
+
+```{r}
+#| output: false
+
+dgp_data <- julia_eval("dgp_data")
+```
+
+```{r}
+#| fig-width: 10
+
+dgp_data |> 
+  mutate(y = map2(μ, σ, ~ rnorm(1000, .x, .y))) |> 
+  unnest(y) |> 
+  ggplot() +
+  geom_density(aes(y)) +
+  facet_grid(rows = vars(sim), cols = vars(programid))
+```
+
+```{julia}
+#| eval: false
+
+b = pftdpw_sim_data.belief[2][1] 
+
+test_data = @pipe data(b.progbeliefs[4]) |> 
+  DataFrame.(_) |> 
+  vcat(_..., source = :study)
+```
+
+```{r}
+#| eval: false
+
+test_data <- julia_eval("test_data")
+
+library(cmdstanr)
+library(posterior)
+
+sim_model <-cmdstan_model("../FundingPOMDPs.jl/stan/sim_model.stan")
+
+test_stan_data <- lst(
+  fit = TRUE, sim = FALSE, sim_forward = FALSE,
+  n_control_sim = 0,
+  n_treated_sim = 0,
+  n_study = 1,
+  study_size = 50,
+  y_control = test_data |> filter(!t) |> pull(y),
+  y_treated = test_data |> filter(t) |> pull(y),
+ 
+  sigma_eta_inv_gamma_priors = TRUE, 
+  mu_sd = 1,
+  tau_mean = 0,
+  tau_sd = 0.5,
+  sigma_sd = 0,
+  eta_sd = c(0, 0, 0),
+  sigma_alpha = 18.5,
+  sigma_beta = 30,
+  eta_alpha = 26.4,
+  eta_beta = 20
+)
+
+fit <- sim_model$sample(test_stan_data, parallel_chains = 4)
+
+dr <- as_draws_rvars(fit)
+```
+
