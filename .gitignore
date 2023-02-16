@@ -24,3 +24,12 @@ docs/site/
 Manifest.toml
 
 temp-data/
+.Rproj.user
+
+effective-funding_files/
+
+renv/
+
+quarto/
+
+.Rhistory
