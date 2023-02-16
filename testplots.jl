@@ -4,15 +4,16 @@ begin
     using DataFrames, DataFramesMeta
     using StatsBase, Gadfly, Pipe, Serialization
     using ParticleFilters
-    using SplitApplyCombine
     using Distributions
-
-    import StatsPlots
+    
+    import SplitApplyCombine
 end
+
+include("diag_util.jl")
 
 Gadfly.set_default_plot_size(50cm, 40cm)
 
-file_suffix = "_test"
+file_suffix = "_500"
 
 util_model = ExponentialUtilityModel(0.25)
 #util_model = RiskNeutralUtilityModel()
@@ -25,41 +26,65 @@ begin
     freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
 end
 
-function calculate_util_diff(planned_reward, baseline_reward; accum = false)  
-    if accum
-        map((p, n) -> cumsum(p) - cumsum(n), planned_reward, baseline_reward)  
-    else
-        map((p, n) -> p - n, planned_reward, baseline_reward)  
-    end
-end
-
-function calculate_util_diff_summ(util_diff)
-    util_diff_mean = [mean(a) for a in invert(util_diff)]
-    util_diff_quant = @pipe [quantile(skipmissing(a), [0.25, 0.5, 0.75]) for a in invert(util_diff)] |>
-        DataFrame(invert(_), [:lb, :med, :ub]) |>
-        insertcols!(_, :step => 1:nrow(_), :mean => util_diff_mean)
-
-    return util_diff_quant
-end
-
 do_nothing_reward = begin 
     do_nothing = ImplementEvalAction()
 
     @pipe greedy_sim_data |>
-        dropmissing(_, :state) |> 
-        [expectedutility.(Ref(util_model), states[Not(end)], Ref(do_nothing)) for states in _.state]
+        dropmissing(_, :state) |>
+        @select(
+            _, 
+            :actual_reward = [expectedutility.(Ref(util_model), states[Not(end)], Ref(do_nothing)) for states in :state],
+            :actual_ex_ante_reward = [expectedutility.(Ref(util_model), dgp.(states[Not(end)]), Ref(do_nothing)) for states in :state],
+            :plan_type = "no eval"
+        )  
 end
 
-vg_util_diff_summ = @pipe [pftdpw_sim_data.actual_reward, random_sim_data.actual_reward, freq_sim_data.actual_reward] |> 
-    (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(greedy_sim_data.actual_reward); accum = true) |> 
-    vcat(_...; source = :algo => ["planned", "random", "freq"])
+do_best_reward = @pipe greedy_sim_data |>
+    dropmissing(_, :state) |> 
+    @select(
+        _,
+        :actual_reward = map(get_program_reward, :state),
+        :actual_ex_ante_reward = map(s -> get_program_reward(s, eval_getter = dgp), :state),
+        :plan_type = "best"
+    ) 
 
-util_diff_summ = @pipe [greedy_sim_data, pftdpw_sim_data, random_sim_data, freq_sim_data] |>
-    [dropmissing(sim_data, :state).actual_reward for sim_data in _] |> 
-    (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_nothing_reward); accum = true) |>
-    vcat(_...; source = :algo => ["greedy", "planned", "random", "freq"])
+accum_rewards = true 
+maxstep = 15
 
-vstack(
+util_diff = @pipe all_sim_data |> 
+    groupby(_, :plan_type) |>
+    @select(
+        _,
+        :plan_type,
+        :ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = false, maxstep = maxstep),
+        :accum_ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = true, maxstep = maxstep),
+        :ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = false, maxstep = maxstep),
+        :accum_ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = true, maxstep = maxstep),
+        :step = repeat([collect(1:maxstep)], length(:plan_type))
+    ) |>  
+    transform(_, eachindex => :sim) |> 
+    flatten(_, Not([:sim, :plan_type])) 
+
+util_diff_summ = @pipe util_diff |> 
+    
+
+vg_util_diff_summ = @pipe [pftdpw_sim_data.actual_reward, random_sim_data.actual_reward, freq_sim_data.actual_reward, do_ex_post_best_reward] |> 
+    map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+    (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(greedy_sim_data.actual_reward); accum = accum_rewards, maxstep = maxstep) |> 
+    vcat(_...; source = :algo => ["planned", "random", "freq", "ex post best"])
+
+vmax_util_diff_summ = @pipe [pftdpw_sim_data.actual_reward, random_sim_data.actual_reward, freq_sim_data.actual_reward, greedy_sim_data.actual_reward] |> 
+    map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+    (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_ex_post_best_reward); accum = accum_rewards, maxstep = maxstep) |> 
+    vcat(_...; source = :algo => ["planned", "random", "freq", "greedy"])
+
+util_diff_summ = @pipe [greedy_sim_data.actual_reward, pftdpw_sim_data.actual_reward, random_sim_data.actual_reward, freq_sim_data.actual_reward, do_ex_post_best_reward] |>
+    map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
+    (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_nothing_reward); accum = accum_rewards, maxstep = maxstep) |>
+    vcat(_...; source = :algo => ["greedy", "planned", "random", "freq", "ex post best"])  
+#    @rsubset(_, :algo in ("greedy", "planned", "ex post best", "random"))
+
+@pipe vstack(
     plot(
         util_diff_summ, x = :step, 
         layer(y = :mean, color = :algo, linestyle = [:dash], Geom.point, Geom.line),
@@ -75,6 +100,14 @@ vstack(
         layer(yintercept = [0.0], Geom.hline(style = :dot, color = "grey")),
         Scale.x_discrete, Guide.yticks(ticks = -0.3:0.1:2) 
     )
+) 
+
+plot(
+    vmax_util_diff_summ, x = :step, color = :algo, 
+    layer(y = :mean, linestyle = [:dash], Geom.point, Geom.line),
+    layer(y = :med, ymin = :lb, ymax = :ub, alpha = [0.75], Geom.line, Geom.ribbon),
+    layer(yintercept = [0.0], Geom.hline(style = :dot, color = "grey")),
+    Scale.x_discrete, Guide.yticks(ticks = -0.3:0.1:2) 
 )
 
 obs_reward = @pipe pairs((greedy = greedy_sim_data.actual_reward, planned = pftdpw_sim_data.actual_reward, random = random_sim_data.actual_reward, freq = freq_sim_data.actual_reward)) |>
@@ -341,6 +374,10 @@ inchrome(D3Tree(pftdpw_sim_data.tree[1][3], init_expand = 1))
         #plot(_, x = :step, y = :value, color = :variable, Geom.point, Geom.line, Scale.x_discrete)
         plot(_, x = :step, y = :cumul_reward, xgroup = :sim, color = :variable, Geom.subplot_grid(Geom.point, Geom.line), Scale.x_discrete)
 
+
+wise_bayes_model = TuringModel(dgp_priors; iter = NUM_TURING_MODEL_ITER)
+
+#=
 greedy_sim_data.action[2]
 freq_sim_data.action[2]
 greedy_sim_data.belief[2][1].progbeliefs[5]
@@ -359,8 +396,6 @@ bayes_model = TuringModel(inference_priors; iter = NUM_TURING_MODEL_ITER)
 
 s0 = FundingPOMDPs.sample(bayes_model, data(greedy_sim_data.belief[2][1].progbeliefs[5]), progress = true)
 
-wise_bayes_model = TuringModel(dgp_priors; iter = NUM_TURING_MODEL_ITER)
-
 s1 = FundingPOMDPs.sample(wise_bayes_model, data(greedy_sim_data.belief[2][1].progbeliefs[5]), progress = true)
 
 naive_bayes_model = TuringModel(inference_priors; iter = NUM_TURING_MODEL_ITER, multilevel = false)
@@ -368,3 +403,15 @@ naive_bayes_model = TuringModel(inference_priors; iter = NUM_TURING_MODEL_ITER, 
 s2 = FundingPOMDPs.sample(naive_bayes_model, data(greedy_sim_data.belief[2][1].progbeliefs[5]), progress = true)
 
 b = ProgramBelief(wise_bayes_model, data(greedy_sim_data.belief[2][1].progbeliefs[5]), 5, Random.GLOBAL_RNG)
+=#
+
+fb = freq_sim_data.belief[2][1] 
+b = pftdpw_sim_data.belief[2][1] 
+b.progbeliefs
+fb.progbeliefs
+expectedutility(util_model, b, ImplementEvalAction([4]))
+expectedutility(util_model, fb, ImplementEvalAction([4]))
+expectedutility.(Ref(util_model), Ref(fb), actlist)
+
+last_state_samples(b.progbeliefs[4])
+s1 = FundingPOMDPs.sample(wise_bayes_model, data(b.progbeliefs[4]), progress = true)
