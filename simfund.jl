@@ -2,7 +2,7 @@ doc = """
 Funding POMDP simulation.
 
 Usage:
-    testpftdpw.jl <sim file> [options] [--risk-neutral | --alpha=<alpha>]
+    simfund.jl <sim file> [options] [--risk-neutral | --alpha=<alpha>]
 
 Options:
     --append, -a                               Append data
