@@ -40,8 +40,9 @@ include("diag_util.jl")
 
 ```{julia}
 #| label: params
+#| include: false
 
-sim_file_suffix = "_test2"
+sim_file_suffix = "_1000"
 util_model = ExponentialUtilityModel(0.25)
 accum_rewards = true 
 maxstep = 15
@@ -51,6 +52,8 @@ actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |> FundingPOMD
 ```
 
 ```{r}
+#| include: false
+
 maxstep <- julia_eval("maxstep")
 nprograms <- julia_eval("nprograms")
 ```
@@ -68,6 +71,7 @@ freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
 ```
 
 ```{julia}
+#| label: prepare-util-data
 #| output: false
 
 do_nothing_reward = begin 
@@ -143,6 +147,8 @@ util_diff = @pipe all_sim_data |>
 ```
 
 ```{r}
+#| label: util-diff-data
+
 util_data <- julia_eval("util_data")
 
 vn_util_diff <- util_data |> 
@@ -159,21 +165,22 @@ vn_util_diff <- util_data |>
   mutate(accum = str_detect(accum, fixed("accum")))
 ```
 
-```{r}
+```{r, fig.width=10, fig.height=10}
 vn_util_diff |> 
   filter(!fct_match(plan_type, "no impl"), accum) |> 
+   filter(fct_match(plan_type, c("pftdpw", "freq", "random"))) |> 
   ggplot(aes(step)) +
-  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  #tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
   tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25) +
   scale_x_continuous("Step", breaks = seq(maxstep)) +
   scale_y_continuous("Accumulated Utility Difference") +
   scale_linetype_discrete("") +
   scale_color_discrete(
     "Planning Type", 
-    labels = c("best" = "Ex Ante Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random"), 
+    labels = c("best" = "Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random"), 
     aesthetics = c("color", "fill")
   ) +
-  facet_wrap(vars(reward_type), ncol = 1, labeller = as_labeller(c(ex_ante = "Ex Ante", ex_post = "Ex Post"))) +
+  facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "Ex Ante", ex_post = "Ex Post"))) +
   labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
   theme(panel.grid.minor.x = element_blank()) +
   NULL
