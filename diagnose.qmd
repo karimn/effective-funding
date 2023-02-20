@@ -241,34 +241,6 @@ obs_act |>
 ```
 
 ```{julia}
-#| output: false
-  
-dgp_data = @pipe collect(skipmissing(pftdpw_sim_data.state)) |> 
-  first.(_) |> 
-  dgp.(_) |> 
-  getproperty.(_, :programdgps) |> 
-  DataFrame.(_) |> 
-  vcat(_..., source = :sim)
-```
-
-```{r}
-#| output: false
-
-dgp_data <- julia_eval("dgp_data")
-```
-
-```{r}
-#| fig-width: 10
-
-dgp_data |> 
-  mutate(y = map2(μ, σ, ~ rnorm(1000, .x, .y))) |> 
-  unnest(y) |> 
-  ggplot() +
-  geom_density(aes(y)) +
-  facet_grid(rows = vars(sim), cols = vars(programid))
-```
-
-```{julia}
 #| eval: false
 
 b = pftdpw_sim_data.belief[2][1] 
