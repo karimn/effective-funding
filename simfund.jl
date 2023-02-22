@@ -28,6 +28,8 @@ args = DocOpt.docopt(
     version = v"0.1.0"
 )
 
+ispath(args["<sim file>"]) && !args["--append"] && error("sim file exists, use --append or delete it first")
+
 using Distributed
 
 # "julia -p" takes precedence
