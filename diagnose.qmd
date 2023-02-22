@@ -26,13 +26,10 @@ import Pkg
 Pkg.activate(".")
 
 using FundingPOMDPs
-using MCTS, POMDPs, D3Trees
+using MCTS, POMDPs, D3Trees, ParticleFilters, Distributions
 using DataFrames, DataFramesMeta
-using StatsBase, Gadfly, Pipe, Serialization
-using ParticleFilters
-using Distributions
+using Pipe, Serialization
 
-import Arrow
 import SplitApplyCombine
 
 include("diag_util.jl")
@@ -156,6 +153,7 @@ vn_util_diff <- util_data |>
   pivot_longer(!c(sim, plan_type, step), names_to = "reward_type", names_pattern = r"{actual_(.*)_reward}", values_to = "reward") |> 
   mutate(reward_type = coalesce(reward_type, "ex_post")) %>%  
   left_join(filter(., fct_match(plan_type, "no impl")) |> select(!plan_type), by = c("reward_type", "sim", "step"), suffix = c("", "_no_impl")) |> 
+  filter(!fct_match(plan_type, "no impl")) |> 
   mutate(reward_diff = reward - reward_no_impl) |> 
   arrange(step) |> 
   group_by(plan_type, reward_type, sim) |> 
@@ -166,24 +164,35 @@ vn_util_diff <- util_data |>
 ```
 
 ```{r, fig.width=10, fig.height=10}
-vn_util_diff |> 
-  filter(!fct_match(plan_type, "no impl"), accum) |> 
-   filter(fct_match(plan_type, c("pftdpw", "freq", "random"))) |> 
+vn_util_diff |>
+  filter(accum) |> 
+  filter(fct_match(plan_type, c("pftdpw", "freq", "random", "none"))) |> 
   ggplot(aes(step)) +
-  #tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
-  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
   scale_x_continuous("Step", breaks = seq(maxstep)) +
   scale_y_continuous("Accumulated Utility Difference") +
-  scale_linetype_discrete("") +
+  scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
   scale_color_discrete(
     "Planning Type", 
     labels = c("best" = "Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random"), 
     aesthetics = c("color", "fill")
   ) +
-  facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "Ex Ante", ex_post = "Ex Post"))) +
+  facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
   labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
   theme(panel.grid.minor.x = element_blank()) +
   NULL
+```
+
+```{r, fig.width=10}
+vn_util_diff |> 
+  filter(!fct_match(plan_type, "best"), accum) |>
+  ggplot(aes(step, reward_diff)) +
+  geom_line(aes(group = str_c(sim, plan_type)), alpha = 0.05) +
+  tidybayes::stat_lineribbon(aes(linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  tidybayes::stat_lineribbon(aes(linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  facet_grid(rows = vars(reward_type), cols = vars(plan_type)) +
+  theme(legend.position = "bottom")
 ```
 
 ```{r}
