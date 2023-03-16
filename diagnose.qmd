@@ -71,20 +71,10 @@ freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
 #| label: prepare-util-data
 #| output: false
 
-do_nothing_reward = begin 
-    do_nothing = ImplementEvalAction()
+do_nothing_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |> 
+  get_do_nothing_plan_data(_, util_model) 
 
-    @pipe greedy_sim_data |>
-        dropmissing(_, :state) |>
-        @select(
-            _, 
-            :actual_reward = [expectedutility.(Ref(util_model), states[Not(end)], Ref(do_nothing)) for states in :state],
-            :actual_ex_ante_reward = [expectedutility.(Ref(util_model), dgp.(states[Not(end)]), Ref(do_nothing)) for states in :state],
-            :plan_type = "no impl"
-        )  
-end
-
-do_best_reward = @pipe greedy_sim_data |>
+do_best_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |>
     dropmissing(_, :state) |> 
     @select(
         _,
