@@ -59,9 +59,8 @@ nprograms <- julia_eval("nprograms")
 #| label: load-sim-data
 #| output: false
 
-all_sim_data = @pipe deserialize("temp-data/sim$(sim_file_suffix).jls")  
+all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls")  
   
-greedy_sim_data = @subset(all_sim_data, :plan_type .== "none")
 pftdpw_sim_data = @subset(all_sim_data, :plan_type .== "pftdpw")
 random_sim_data = @subset(all_sim_data, :plan_type .== "random")
 freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
@@ -89,48 +88,6 @@ util_data = @pipe all_sim_data |>
     groupby(_, :plan_type) |> 
     transform!(_, eachindex => :sim) |> 
     flatten(_, Not([:plan_type, :sim]))
-```
-
-```{julia}
-#| eval: false
-
-vg_util_diff_summ = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data] |> 
-  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
-  vcat(_, [use_ex_ante_reward ? do_ex_ante_best_reward : do_ex_post_best_reward]) |> 
-  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
-  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(greedy_sim_data.actual_reward); accum = accum_rewards, maxstep = maxstep) |> 
-  vcat(_...; source = :algo => ["planned", "random", "freq", "ex post best"])
-
-vmax_util_diff_summ = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data, greedy_sim_data] |> 
-  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
-  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
-  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_ex_post_best_reward); accum = accum_rewards, maxstep = maxstep) |> 
-  vcat(_...; source = :algo => ["planned", "random", "freq", "greedy"])
-
-util_diff_summ = @pipe [greedy_sim_data, pftdpw_sim_data, random_sim_data, freq_sim_data] |> 
-  [use_ex_ante_reward ? d[:, :actual_ex_ante_reward] : d[:, :actual_reward] for d in _] |> 
-  vcat(_, [use_ex_ante_reward ? do_ex_ante_best_reward : do_ex_post_best_reward]) |> 
-  map(r -> filter(x -> length(x) >= maxstep, r), _) |> 
-  (calculate_util_diff_summ ∘ calculate_util_diff).(_, Ref(do_nothing_reward); accum = accum_rewards, maxstep = maxstep) |>
-  vcat(_...; source = :algo => ["greedy", "planned", "random", "freq", "ex post best"])  
-```
-```{julia}
-#| eval: false
-#| 
-util_diff = @pipe all_sim_data |> 
-    vcat(_, do_best_reward, cols = :union) |> 
-    groupby(_, :plan_type) |>
-    @select(
-        _,
-        :plan_type,
-        :ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = false, maxstep = maxstep),
-        :accum_ex_post_reward_diff = calculate_util_diff(:actual_reward, do_nothing_reward.actual_reward, accum = true, maxstep = maxstep),
-        :ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = false, maxstep = maxstep),
-        :accum_ex_ante_reward_diff = calculate_util_diff(:actual_ex_ante_reward, do_nothing_reward.actual_ex_ante_reward, accum = true, maxstep = maxstep),
-        :step = repeat([collect(1:maxstep)], length(:plan_type))
-    ) |> 
-    transform!(_, eachindex => :sim) |> 
-    flatten(_, Not([:plan_type, :sim])) 
 ```
 
 ```{r}
