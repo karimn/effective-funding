@@ -18,13 +18,14 @@ Options:
     --k-state=<k>                              State hyperparameter k [default: 4.5]
     --reward-only                              Return rewards only in simulation data
     --use-dgp-priors                           Use the same priors for the DGP and inference.
+    --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, all [default: all]
 """
 
 import DocOpt
 
 args = DocOpt.docopt(
     doc, 
-    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=2 --pftdpw-iter=2" : ARGS, 
+    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=1 --pftdpw-iter=2 --plans=none,freq" : ARGS, 
     version = v"0.1.0"
 )
 
@@ -58,6 +59,9 @@ const NUM_PROGRAMS = parse(Int, args["--numprograms"])
 const NUM_SIM_STEPS = parse(Int, args["--numsteps"])  
 const NUM_TURING_MODEL_ITER = 1_000
 const NUM_FILTER_PARTICLES = 2_000
+const PLAN_TYPES = ["none", "pftdpw", "random", "freq"]
+
+use_plan_types = args["--plans"] == "all" ? PLAN_TYPES : intersect(PLAN_TYPES, collect(eachsplit(args["--plans"],",")))
 
 dgp_priors = Priors(
     μ = Normal(0, 1.0),
@@ -110,10 +114,10 @@ pftdpw_solver = MCTS.DPWSolver(
 
 const NUM_SIM = parse(Int, args["--numsim"])
 
-planned_sims = Vector{POMDPTools.Sim}(undef, NUM_SIM)
-greedy_sims = Vector{POMDPTools.Sim}(undef, NUM_SIM)
-random_sims = Vector{POMDPTools.Sim}(undef, NUM_SIM)
-freq_sims = Vector{POMDPTools.Sim}(undef, NUM_SIM)
+planned_sims = "pftdpw" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
+greedy_sims = "none" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
+random_sims = "random" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
+freq_sims = "freq" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 
 pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
 
@@ -169,10 +173,10 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     freq_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, data(bayes_b), ols_model)
     freq_random_planner = POMDPs.solve(random_solver, freq_pomdp)
 
-    greedy_sims[sim_index] = POMDPSimulators.Sim(greedy_pomdp, greedy_policy, bayes_updater, initialbelief(greedy_pomdp), init_s, rng = greedy_sim_rng, max_steps = NUM_SIM_STEPS)
-    planned_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, pftdpw_planner, particle_updater, bayes_b, init_s, rng = planned_sim_rng, max_steps = NUM_SIM_STEPS)
-    random_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, random_planner, bayes_updater, bayes_b, init_s, rng = random_sim_rng, max_steps = NUM_SIM_STEPS)
-    freq_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_random_planner, ols_updater, initialbelief(freq_pomdp), init_s, rng = freq_sim_rng, max_steps = NUM_SIM_STEPS)
+    if greedy_sims !== nothing greedy_sims[sim_index] = POMDPSimulators.Sim(greedy_pomdp, greedy_policy, bayes_updater, initialbelief(greedy_pomdp), init_s, rng = greedy_sim_rng, max_steps = NUM_SIM_STEPS) end
+    if planned_sims !== nothing planned_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, pftdpw_planner, particle_updater, bayes_b, init_s, rng = planned_sim_rng, max_steps = NUM_SIM_STEPS) end
+    if random_sims !== nothing random_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, random_planner, bayes_updater, bayes_b, init_s, rng = random_sim_rng, max_steps = NUM_SIM_STEPS) end
+    if freq_sims !== nothing freq_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_random_planner, ols_updater, initialbelief(freq_pomdp), init_s, rng = freq_sim_rng, max_steps = NUM_SIM_STEPS) end
 
     ProgressMeter.next!(pm)
 end
@@ -212,8 +216,9 @@ run_fun = NUM_PROCS > 1 ? POMDPTools.run_parallel : POMDPTools.run
 get_sim_data = create_sim_data_getter(args["--reward-only"])
 
 all_sim_data = @pipe vcat(greedy_sims, planned_sims, random_sims, freq_sims) |> 
+    filter(x -> !isnothing(x), _) |> 
     run_fun(get_sim_data, _; show_progress = true) |> 
-    insertcols!(_, :plan_type => repeat(["none", "pftdpw", "random", "freq"], inner = NUM_SIM))
+    insertcols!(_, :plan_type => repeat(use_plan_types, inner = NUM_SIM))
 
 function append_sim_data(d, file)
     try
