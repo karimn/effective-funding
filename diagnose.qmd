@@ -41,6 +41,7 @@ include("diag_util.jl")
 
 sim_file_suffix = "_1000"
 util_model = ExponentialUtilityModel(0.25)
+discount = 0.95
 accum_rewards = true 
 maxstep = 15
 use_ex_ante_reward = true 
@@ -53,6 +54,7 @@ actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |> FundingPOMD
 
 maxstep <- julia_eval("maxstep")
 nprograms <- julia_eval("nprograms")
+discount <- julia_eval("discount")
 ```
 
 ```{julia}
@@ -104,40 +106,63 @@ vn_util_diff <- util_data |>
   mutate(reward_diff = reward - reward_no_impl) |> 
   arrange(step) |> 
   group_by(plan_type, reward_type, sim) |> 
-  mutate(accum_reward_diff = cumsum(reward_diff)) |> 
+  mutate(
+    discounted_reward_diff = (discount^(step - 1)) * reward_diff,
+    accum_reward_diff = cumsum(reward_diff),
+    discounted_accum_reward_diff = cumsum(discounted_reward_diff)
+  ) |> 
   ungroup() |> 
-  pivot_longer(c(reward_diff, accum_reward_diff), names_to = "accum", values_to = "reward_diff") |> 
-  mutate(accum = str_detect(accum, fixed("accum")))
+  pivot_longer(c(reward_diff, discounted_reward_diff, accum_reward_diff, discounted_accum_reward_diff), values_to = "reward_diff") |> 
+  mutate(
+    accum = str_detect(name, fixed("accum")),
+    discounted = str_detect(name, fixed("discounted"))
+  ) |> 
+  select(!name)
 ```
 
 ```{r, fig.width=10, fig.height=10}
 vn_util_diff |>
-  filter(accum) |> 
-  filter(fct_match(plan_type, c("pftdpw", "freq", "random", "none"))) |> 
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "random", "none"))) |> 
   ggplot(aes(step)) +
   tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
-  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
   scale_x_continuous("Step", breaks = seq(maxstep)) +
-  scale_y_continuous("Accumulated Utility Difference") +
-  scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
+  scale_y_continuous("Accumulated Utility Difference", breaks = seq(0, 2, 0.1)) +
+  #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
   scale_color_discrete(
     "Planning Type", 
-    labels = c("best" = "Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random"), 
+    labels = c("best" = "Best", "freq" = "Random (Frequentist)", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random (Bayesian)"), 
     aesthetics = c("color", "fill")
   ) +
   facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
   labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
   theme(panel.grid.minor.x = element_blank()) +
+  guides(linetype = "none") +
+  NULL
+```
+```{r}
+vn_util_diff |>
+  filter(step == 1, accum, discounted, fct_match(plan_type, c("pftdpw", "freq"))) |> 
+  ggplot(aes(y = plan_type)) +
+  tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_y_discrete(
+    "Planning Type", 
+    labels = c("best" = "Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random")
+  ) +
+  scale_x_continuous("Accumulated Utility Difference") +
+  labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
+  facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
   NULL
 ```
 
 ```{r, fig.width=10}
 vn_util_diff |> 
-  filter(!fct_match(plan_type, "best"), accum) |>
+  filter(!fct_match(plan_type, "best"), discounted, accum) |>
   ggplot(aes(step, reward_diff)) +
-  geom_line(aes(group = str_c(sim, plan_type)), alpha = 0.05) +
+  #geom_line(aes(group = str_c(sim, plan_type)), alpha = 0.05) +
   tidybayes::stat_lineribbon(aes(linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
-  tidybayes::stat_lineribbon(aes(linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  tidybayes::stat_lineribbon(aes(linetype = "Median"), .width = 0.5, alpha = 0.25, linewidth = 0.25, point_interval = median_qi) +
   facet_grid(rows = vars(reward_type), cols = vars(plan_type)) +
   theme(legend.position = "bottom")
 ```
