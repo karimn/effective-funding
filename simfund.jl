@@ -18,7 +18,7 @@ Options:
     --k-state=<k>                              State hyperparameter k [default: 4.5]
     --reward-only                              Return rewards only in simulation data
     --use-dgp-priors                           Use the same priors for the DGP and inference.
-    --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, all [default: all]
+    --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, evalsecond, all [default: all]
 """
 
 import DocOpt
@@ -59,7 +59,7 @@ const NUM_PROGRAMS = parse(Int, args["--numprograms"])
 const NUM_SIM_STEPS = parse(Int, args["--numsteps"])  
 const NUM_TURING_MODEL_ITER = 1_000
 const NUM_FILTER_PARTICLES = 2_000
-const PLAN_TYPES = ["none", "pftdpw", "random", "freq"]
+const PLAN_TYPES = ["none", "pftdpw", "random", "freq", "evalsecond"]
 
 use_plan_types = args["--plans"] == "all" ? PLAN_TYPES : intersect(PLAN_TYPES, collect(eachsplit(args["--plans"],",")))
 
@@ -96,7 +96,8 @@ select_subset_actionset_factory = SelectProgramSubsetActionSetFactory(NUM_PROGRA
 explore_only_actionset_factory = ExploreOnlyActionSetFactory(NUM_PROGRAMS, 1, 1, util_model)
 
 random_solver = POMDPTools.RandomSolver()
-greedy_solver = BayesianGreedySolver()
+greedy_solver = GreedySolver()
+secondbest_solver = GreedySolver(2)
 
 pftdpw_solver = MCTS.DPWSolver(
     depth = parse(Int, args["--depth"]),
@@ -118,6 +119,7 @@ planned_sims = "pftdpw" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_S
 greedy_sims = "none" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 random_sims = "random" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 freq_sims = "freq" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
+evalsecond_sims = "evalsecond" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 
 pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
 
@@ -128,11 +130,13 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     planned_sim_rng = copy(greedy_sim_rng)
     random_sim_rng = copy(greedy_sim_rng)
     freq_sim_rng = copy(greedy_sim_rng)
+    evalsecond_sim_rng = copy(greedy_sim_rng)
 
     planned_dgp = DGP(dgp_priors, dgp_rng, NUM_PROGRAMS)
     greedy_dgp = deepcopy(planned_dgp)
     random_dgp = deepcopy(planned_dgp)
     freq_dgp = deepcopy(planned_dgp)
+    evalsecond_dgp = deepcopy(planned_dgp)
 
     pre_s = Base.rand(RNG, planned_dgp; state_chain_length = NUM_SIM_STEPS + 1) # One more for the pre-state
     init_s = next_state(pre_s)
@@ -157,6 +161,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     belief_mdp = MCTS.GenerativeBeliefMDP(deepcopy(planned_pomdp), particle_updater)
     pftdpw_planner = POMDPs.solve(pftdpw_solver, belief_mdp)
     random_planner = POMDPs.solve(random_solver, planned_pomdp)
+    evalsecond_planner = POMDPs.solve(secondbest_solver, planned_pomdp)
 
     greedy_mdp = KBanditFundingMDP{ImplementOnlyAction}(
         util_model,
@@ -177,6 +182,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     if planned_sims !== nothing planned_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, pftdpw_planner, particle_updater, bayes_b, init_s, rng = planned_sim_rng, max_steps = NUM_SIM_STEPS) end
     if random_sims !== nothing random_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, random_planner, bayes_updater, bayes_b, init_s, rng = random_sim_rng, max_steps = NUM_SIM_STEPS) end
     if freq_sims !== nothing freq_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_random_planner, ols_updater, initialbelief(freq_pomdp), init_s, rng = freq_sim_rng, max_steps = NUM_SIM_STEPS) end
+    if evalsecond_sims !== nothing evalsecond_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, evalsecond_planner, bayes_updater, bayes_b, init_s, rng = evalsecond_sim_rng, max_steps = NUM_SIM_STEPS) end
 
     ProgressMeter.next!(pm)
 end
@@ -215,7 +221,7 @@ end
 run_fun = NUM_PROCS > 1 ? POMDPTools.run_parallel : POMDPTools.run
 get_sim_data = create_sim_data_getter(args["--reward-only"])
 
-all_sim_data = @pipe vcat(greedy_sims, planned_sims, random_sims, freq_sims) |> 
+all_sim_data = @pipe vcat(greedy_sims, planned_sims, random_sims, freq_sims, evalsecond_sims) |> 
     filter(x -> !isnothing(x), _) |> 
     run_fun(get_sim_data, _; show_progress = true) |> 
     insertcols!(_, :plan_type => repeat(use_plan_types, inner = NUM_SIM))
