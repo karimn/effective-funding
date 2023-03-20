@@ -1,3 +1,28 @@
+function get_do_nothing_plan_data(other_plan_data, util_model)
+    do_nothing = ImplementEvalAction()
+
+    @pipe other_plan_data |>
+        dropmissing(_, :state) |>
+        @select(
+            _, 
+            :actual_reward = [expectedutility.(Ref(util_model), states[Not(end)], Ref(do_nothing)) for states in :state],
+            :actual_ex_ante_reward = [expectedutility.(Ref(util_model), dgp.(states[Not(end)]), Ref(do_nothing)) for states in :state],
+            :plan_type = "no impl"
+        )  
+end
+
+function get_best_plan_data(other_plan_data, util_model)
+    @pipe other_plan_data |>
+        dropmissing(_, :state) |>
+        @select(
+            _,
+            :actual_reward = map(get_program_reward, :state),
+            :actual_ex_ante_reward = map(s -> get_program_reward(s, eval_getter = dgp), :state),
+            :plan_type = "best"
+        )  
+end
+
+
 function calculate_util_diff(planned_reward, baseline_reward; accum = false, maxstep = nothing)  
     if accum
         diff = map((p, n) -> cumsum(p) - cumsum(n), planned_reward, baseline_reward)  
