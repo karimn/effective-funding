@@ -2,7 +2,7 @@ doc = """
 Funding POMDP simulation.
 
 Usage:
-    simfund.jl <sim file> [options] [--risk-neutral | --alpha=<alpha>]
+    simfund.jl <sim file> [options] [--risk-neutral | --alpha=<alpha>] [--states-file=<file> [--sim-range=<range>]]
 
 Options:
     --append, -a                               Append data
@@ -12,20 +12,23 @@ Options:
     --numprocs=<nprocs>                        Number of parallel processes [default: 5]
     --depth=<depth>, -d <depth>                Planning depth [default: 10]
     --alpha=<alpha>                            Exponential utility function alpha parameter [default: 0.25]
-    --risk-neutral                             Risk neutral utility
+    --risk-neutral                             Risk neutral utility.
     --pftdpw-iter=<iter>                       Number of DPW solver iterations [default: 100]
-    --save-pftdpw-tree                         Save MCTS tree in action info
+    --save-pftdpw-tree                         Save MCTS tree in action info.
     --k-state=<k>                              State hyperparameter k [default: 4.5]
-    --reward-only                              Return rewards only in simulation data
+    --reward-only                              Return rewards only in simulation data.
     --use-dgp-priors                           Use the same priors for the DGP and inference.
     --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, evalsecond, all [default: all]
+    --catchup                                  Run sims for missing planning policies, reading states from  previously run sims.
+    --states-file=<file>                       File from which to read (hyper) states from previously run sims.
+    --sim-range=<range>                        Range of sims to catch-up (format: <first sim>-<last sim>).
 """
 
 import DocOpt
 
 args = DocOpt.docopt(
     doc, 
-    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=1 --pftdpw-iter=2 --plans=none,freq" : ARGS, 
+    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=1 --pftdpw-iter=2 --plans=evalsecond --catchup --states-file=temp-data/sim_1000.jls" : ARGS, 
     version = v"0.1.0"
 )
 
@@ -43,7 +46,7 @@ end
 @everywhere begin 
     using FundingPOMDPs
 
-    using DataFrames, StatsBase, Base.Threads, Distributions, Pipe
+    using DataFrames, DataFramesMeta, StatsBase, Base.Threads, Distributions, Pipe
 
     import Random, Serialization
     import POMDPs, POMDPTools, POMDPSimulators
@@ -60,6 +63,7 @@ const NUM_SIM_STEPS = parse(Int, args["--numsteps"])
 const NUM_TURING_MODEL_ITER = 1_000
 const NUM_FILTER_PARTICLES = 2_000
 const PLAN_TYPES = ["none", "pftdpw", "random", "freq", "evalsecond"]
+const CATCHUP = args["--catchup"]
 
 use_plan_types = args["--plans"] == "all" ? PLAN_TYPES : intersect(PLAN_TYPES, collect(eachsplit(args["--plans"],",")))
 
@@ -113,7 +117,17 @@ pftdpw_solver = MCTS.DPWSolver(
     rng = RNG 
 )
 
-const NUM_SIM = parse(Int, args["--numsim"])
+if CATCHUP 
+    prevstates = @pipe Serialization.deserialize(args["--states-file"] ≡ nothing ? args["<sim file>"] : args["--states-file"]) |>
+        #@subset(_, :plan_type .== first(:plan_type)) 
+        @subset!(_, :plan_type .== "none")
+        
+    if args["--sim-range"] ≢ nothing
+        prevstates = prevstates[range(parse.(Int, split(args["--sim-range"], "-"))...), :]
+    end
+end
+
+const NUM_SIM = CATCHUP ? nrow(prevstates) : parse(Int, args["--numsim"])
 
 planned_sims = "pftdpw" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 greedy_sims = "none" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
@@ -132,30 +146,38 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     freq_sim_rng = copy(greedy_sim_rng)
     evalsecond_sim_rng = copy(greedy_sim_rng)
 
-    planned_dgp = DGP(dgp_priors, dgp_rng, NUM_PROGRAMS)
-    greedy_dgp = deepcopy(planned_dgp)
-    random_dgp = deepcopy(planned_dgp)
-    freq_dgp = deepcopy(planned_dgp)
-    evalsecond_dgp = deepcopy(planned_dgp)
+    if CATCHUP
+        init_s = prevstates.state[sim_index][1]
+        pre_s = prev_state(init_s) 
+    else
+        planned_dgp = DGP(dgp_priors, dgp_rng, NUM_PROGRAMS)
+        greedy_dgp = deepcopy(planned_dgp)
+        random_dgp = deepcopy(planned_dgp)
+        freq_dgp = deepcopy(planned_dgp)
+        evalsecond_dgp = deepcopy(planned_dgp)
 
-    pre_s = Base.rand(RNG, planned_dgp; state_chain_length = NUM_SIM_STEPS + 1) # One more for the pre-state
-    init_s = next_state(pre_s)
+        pre_s = Base.rand(dgp_rng, planned_dgp; state_chain_length = NUM_SIM_STEPS + 1) # One more for the pre-state
+        init_s = next_state(pre_s)
+    end
 
     planned_mdp = KBanditFundingMDP{SeparateImplementEvalAction}(
         util_model,
         0.95,
         50,
         explore_only_actionset_factory,
-        RNG,
+        dgp_rng,
         pre_s
     )
-    
-    bayes_b = nothing
 
-    planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_model)
+    if CATCHUP && !ismissing(prevstates.belief[sim_index])
+        bayes_b = prevstates.belief[sim_index][1] 
+        planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_b)
+    else 
+        planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_model)
+        bayes_b = initialbelief(planned_pomdp)
+    end
 
     particle_updater = MultiBootstrapFilter(planned_pomdp, NUM_FILTER_PARTICLES, bayes_updater)
-    bayes_b = initialbelief(planned_pomdp)
     particle_b = POMDPs.initialize_belief(particle_updater, bayes_b)
 
     belief_mdp = MCTS.GenerativeBeliefMDP(deepcopy(planned_pomdp), particle_updater)
@@ -168,7 +190,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
         0.95,
         50,
         select_subset_actionset_factory,
-        RNG,
+        dgp_rng,
         pre_s 
     )
 
