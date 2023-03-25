@@ -61,9 +61,7 @@ discount <- julia_eval("discount")
 #| label: load-sim-data
 #| output: false
 
-evalsecond_sim_data = deserialize("temp-data/evalsecond_sim$(sim_file_suffix).jls")  
-all_sim_data = @pipe deserialize("temp-data/sim$(sim_file_suffix).jls") |> 
-  vcat(_, evalsecond_sim_data; cols = :union)
+all_sim_data = @pipe deserialize("temp-data/sim$(sim_file_suffix).jls") 
   
 pftdpw_sim_data = @subset(all_sim_data, :plan_type .== "pftdpw")
 random_sim_data = @subset(all_sim_data, :plan_type .== "random")
