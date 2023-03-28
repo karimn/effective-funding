@@ -18,7 +18,7 @@ Options:
     --k-state=<k>                              State hyperparameter k [default: 4.5]
     --reward-only                              Return rewards only in simulation data.
     --use-dgp-priors                           Use the same priors for the DGP and inference.
-    --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, evalsecond, all [default: all]
+    --plans=<algo>                             Planning algorithms to use: none, pftdpw, random, freq, evalsecond, freqevalsecond, all [default: all]
     --catchup                                  Run sims for missing planning policies, reading states from  previously run sims.
     --states-file=<file>                       File from which to read (hyper) states from previously run sims.
     --sim-range=<range>                        Range of sims to catch-up (format: <first sim>-<last sim>).
@@ -28,7 +28,7 @@ import DocOpt
 
 args = DocOpt.docopt(
     doc, 
-    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=1 --pftdpw-iter=2 --plans=evalsecond --catchup --states-file=temp-data/sim_1000.jls" : ARGS, 
+    isinteractive() ? "temp-data/sim_interactive_test.jls -p 2 -s 2 -t 2 --numprocs=1 --pftdpw-iter=2 --plans=freq_evalsecond --catchup --sim-range=1-10 --states-file=temp-data/sim_1000.jls" : ARGS, 
     version = v"0.1.0"
 )
 
@@ -62,7 +62,7 @@ const NUM_PROGRAMS = parse(Int, args["--numprograms"])
 const NUM_SIM_STEPS = parse(Int, args["--numsteps"])  
 const NUM_TURING_MODEL_ITER = 1_000
 const NUM_FILTER_PARTICLES = 2_000
-const PLAN_TYPES = ["none", "pftdpw", "random", "freq", "evalsecond"]
+const PLAN_TYPES = ["none", "pftdpw", "random", "freq", "evalsecond", "freq_evalsecond"]
 const CATCHUP = args["--catchup"]
 
 use_plan_types = args["--plans"] == "all" ? PLAN_TYPES : intersect(PLAN_TYPES, collect(eachsplit(args["--plans"],",")))
@@ -134,6 +134,7 @@ greedy_sims = "none" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM)
 random_sims = "random" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 freq_sims = "freq" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 evalsecond_sims = "evalsecond" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
+freq_evalsecond_sims = "freq_evalsecond" ∈ use_plan_types ? Vector{POMDPTools.Sim}(undef, NUM_SIM) : nothing
 
 pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
 
@@ -145,6 +146,7 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
     random_sim_rng = copy(greedy_sim_rng)
     freq_sim_rng = copy(greedy_sim_rng)
     evalsecond_sim_rng = copy(greedy_sim_rng)
+    freq_evalsecond_sim_rng = copy(greedy_sim_rng)
 
     if CATCHUP
         init_s = prevstates.state[sim_index][1]
@@ -169,42 +171,55 @@ pm = ProgressMeter.Progress(NUM_SIM, desc = "Preparing sims...")
         pre_s
     )
 
-    if CATCHUP && !ismissing(prevstates.belief[sim_index])
-        bayes_b = prevstates.belief[sim_index][1] 
-        planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_b)
-    else 
-        planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_model)
-        bayes_b = initialbelief(planned_pomdp)
+    bayes_b = nothing
+
+    if !isdisjoint(use_plan_types, ["pftdpw", "none", "random", "evalsecond"])
+        if CATCHUP && !ismissing(prevstates.belief[sim_index])
+            bayes_b = prevstates.belief[sim_index][1] 
+            planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_b)
+        else 
+            planned_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, bayes_model)
+            bayes_b = initialbelief(planned_pomdp)
+        end
+
+        particle_updater = MultiBootstrapFilter(planned_pomdp, NUM_FILTER_PARTICLES, bayes_updater)
+        particle_b = POMDPs.initialize_belief(particle_updater, bayes_b)
+
+        belief_mdp = MCTS.GenerativeBeliefMDP(deepcopy(planned_pomdp), particle_updater)
+        pftdpw_planner = POMDPs.solve(pftdpw_solver, belief_mdp)
+        random_planner = POMDPs.solve(random_solver, planned_pomdp)
+        evalsecond_planner = POMDPs.solve(secondbest_solver, planned_pomdp)
+
+        greedy_mdp = KBanditFundingMDP{ImplementOnlyAction}(
+            util_model,
+            0.95,
+            50,
+            select_subset_actionset_factory,
+            dgp_rng,
+            pre_s 
+        )
+
+        greedy_pomdp = KBanditFundingPOMDP{ImplementOnlyAction}(greedy_mdp, bayes_b) 
+        greedy_policy = POMDPs.solve(greedy_solver, greedy_pomdp)
+
+        if greedy_sims !== nothing greedy_sims[sim_index] = POMDPSimulators.Sim(greedy_pomdp, greedy_policy, bayes_updater, initialbelief(greedy_pomdp), init_s, rng = greedy_sim_rng, max_steps = NUM_SIM_STEPS) end
+        if planned_sims !== nothing planned_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, pftdpw_planner, particle_updater, bayes_b, init_s, rng = planned_sim_rng, max_steps = NUM_SIM_STEPS) end
+        if random_sims !== nothing random_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, random_planner, bayes_updater, bayes_b, init_s, rng = random_sim_rng, max_steps = NUM_SIM_STEPS) end
+        if evalsecond_sims !== nothing evalsecond_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, evalsecond_planner, bayes_updater, bayes_b, init_s, rng = evalsecond_sim_rng, max_steps = NUM_SIM_STEPS) end
     end
 
-    particle_updater = MultiBootstrapFilter(planned_pomdp, NUM_FILTER_PARTICLES, bayes_updater)
-    particle_b = POMDPs.initialize_belief(particle_updater, bayes_b)
+    if !isdisjoint(use_plan_types, ["freq", "freq_evalsecond"])
+        init_data =  bayes_b ≢ nothing ? data(bayes_b) : generate_init_data(planned_mdp)
 
-    belief_mdp = MCTS.GenerativeBeliefMDP(deepcopy(planned_pomdp), particle_updater)
-    pftdpw_planner = POMDPs.solve(pftdpw_solver, belief_mdp)
-    random_planner = POMDPs.solve(random_solver, planned_pomdp)
-    evalsecond_planner = POMDPs.solve(secondbest_solver, planned_pomdp)
+        freq_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, init_data, ols_model)
+        freq_random_planner = POMDPs.solve(random_solver, freq_pomdp)
+        freq_evalsecond_planner = POMDPs.solve(secondbest_solver, freq_pomdp)
 
-    greedy_mdp = KBanditFundingMDP{ImplementOnlyAction}(
-        util_model,
-        0.95,
-        50,
-        select_subset_actionset_factory,
-        dgp_rng,
-        pre_s 
-    )
+        init_freq_b = initialbelief(freq_pomdp)
 
-    greedy_pomdp = KBanditFundingPOMDP{ImplementOnlyAction}(greedy_mdp, bayes_b) 
-    greedy_policy = POMDPs.solve(greedy_solver, greedy_pomdp)
-
-    freq_pomdp = KBanditFundingPOMDP{SeparateImplementEvalAction}(planned_mdp, data(bayes_b), ols_model)
-    freq_random_planner = POMDPs.solve(random_solver, freq_pomdp)
-
-    if greedy_sims !== nothing greedy_sims[sim_index] = POMDPSimulators.Sim(greedy_pomdp, greedy_policy, bayes_updater, initialbelief(greedy_pomdp), init_s, rng = greedy_sim_rng, max_steps = NUM_SIM_STEPS) end
-    if planned_sims !== nothing planned_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, pftdpw_planner, particle_updater, bayes_b, init_s, rng = planned_sim_rng, max_steps = NUM_SIM_STEPS) end
-    if random_sims !== nothing random_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, random_planner, bayes_updater, bayes_b, init_s, rng = random_sim_rng, max_steps = NUM_SIM_STEPS) end
-    if freq_sims !== nothing freq_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_random_planner, ols_updater, initialbelief(freq_pomdp), init_s, rng = freq_sim_rng, max_steps = NUM_SIM_STEPS) end
-    if evalsecond_sims !== nothing evalsecond_sims[sim_index] = POMDPSimulators.Sim(planned_pomdp, evalsecond_planner, bayes_updater, bayes_b, init_s, rng = evalsecond_sim_rng, max_steps = NUM_SIM_STEPS) end
+        if freq_sims !== nothing freq_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_random_planner, ols_updater, init_freq_b, init_s, rng = freq_sim_rng, max_steps = NUM_SIM_STEPS) end
+        if freq_evalsecond_sims !== nothing freq_evalsecond_sims[sim_index] = POMDPSimulators.Sim(freq_pomdp, freq_evalsecond_planner, ols_updater, init_freq_b, init_s, rng = freq_evalsecond_sim_rng, max_steps = NUM_SIM_STEPS) end
+    end
 
     ProgressMeter.next!(pm)
 end
@@ -243,7 +258,7 @@ end
 run_fun = NUM_PROCS > 1 ? POMDPTools.run_parallel : POMDPTools.run
 get_sim_data = create_sim_data_getter(args["--reward-only"])
 
-all_sim_data = @pipe vcat(greedy_sims, planned_sims, random_sims, freq_sims, evalsecond_sims) |> 
+all_sim_data = @pipe vcat(greedy_sims, planned_sims, random_sims, freq_sims, evalsecond_sims, freq_evalsecond_sims) |> 
     filter(x -> !isnothing(x), _) |> 
     run_fun(get_sim_data, _; show_progress = true) |> 
     insertcols!(_, :plan_type => repeat(use_plan_types, inner = NUM_SIM))
