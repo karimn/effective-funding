@@ -61,7 +61,7 @@ discount <- julia_eval("discount")
 #| label: load-sim-data
 #| output: false
 
-all_sim_data = @pipe deserialize("temp-data/sim$(sim_file_suffix).jls") 
+all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls") 
   
 pftdpw_sim_data = @subset(all_sim_data, :plan_type .== "pftdpw")
 random_sim_data = @subset(all_sim_data, :plan_type .== "random")
@@ -123,7 +123,7 @@ vn_util_diff <- util_data |>
 
 ```{r, fig.width=10, fig.height=10}
 vn_util_diff |>
-  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "random", "none", "evalsecond"))) |> 
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "random", "none", "evalsecond", "freq_evalsecond"))) |> 
   ggplot(aes(step)) +
   tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
   # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
@@ -132,7 +132,8 @@ vn_util_diff |>
   #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
   scale_color_discrete(
     "Planning Type", 
-    labels = c("best" = "Best", "freq" = "Random (Frequentist)", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random (Bayesian)", evalsecond = "Evaluate Second Best (Bayesian)"), 
+    labels = c("best" = "Best", "freq" = "Random (Frequentist)", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random (Bayesian)", evalsecond = "Evaluate Second Best (Bayesian)",
+               freq_evalsecond = "Evaluate Second Best (Frequentist)"), 
     aesthetics = c("color", "fill")
   ) +
   facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
