@@ -4,6 +4,8 @@ format:
   html:
     code-fold: true
     fig-width: 10 
+execute: 
+  echo: false
 ---
 
 ```{r}
@@ -56,6 +58,18 @@ maxstep <- julia_eval("maxstep")
 nprograms <- julia_eval("nprograms")
 discount <- julia_eval("discount")
 ```
+
+# Introduction
+
+The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.
+
+This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.
+
+# The Environment
+
+# The Problem
+
+# Results
 
 ```{julia}
 #| label: load-sim-data
@@ -168,14 +182,6 @@ vn_util_diff |>
   tidybayes::stat_lineribbon(aes(linetype = "Median"), .width = 0.5, alpha = 0.25, linewidth = 0.25, point_interval = median_qi) +
   facet_grid(rows = vars(reward_type), cols = vars(plan_type)) +
   theme(legend.position = "bottom")
-```
-
-```{r}
-vn_util_diff |> 
-  filter(step == maxstep, accum, fct_match(reward_type, "ex_ante")) |> 
-  ggplot(aes(y = plan_type, x = reward_diff)) +
-  geom_col(alpha = 0.5) +
-  NULL
 ```
 
 ```{julia}
@@ -293,3 +299,7 @@ fit <- sim_model$sample(test_stan_data, parallel_chains = 4)
 dr <- as_draws_rvars(fit)
 ```
 
+
+# Discussion
+
+# Conclusion
