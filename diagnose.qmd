@@ -2,10 +2,14 @@
 title: "Comparing Planning Algorithms"
 format: 
   html:
+    number-sections: true
     code-fold: true
-    fig-width: 10 
+    fig-width: 9 
 execute: 
   echo: false
+knitr:
+  opts_chunk: 
+    cache: true 
 ---
 
 ```{r}
@@ -59,18 +63,6 @@ nprograms <- julia_eval("nprograms")
 discount <- julia_eval("discount")
 ```
 
-# Introduction
-
-The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.
-
-This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.
-
-# The Environment
-
-# The Problem
-
-# Results
-
 ```{julia}
 #| label: load-sim-data
 #| output: false
@@ -82,6 +74,129 @@ random_sim_data = @subset(all_sim_data, :plan_type .== "random")
 freq_sim_data = @subset(all_sim_data, :plan_type .== "freq")
 evalsecond_sim_data = @subset(all_sim_data, :plan_type .== "evalsecond")
 ```
+
+# Introduction
+
+The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.
+
+This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.
+
+# The Environment
+
+In this experiment I'm going to use as simple as possible of an environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The agent is assumed to be confronted with $K$ programs and have to decide which program(s) to fund.[In this study, we have $K = 10$.]{.aside} They will have to repeatedly make revisit this decision over a number of _steps_. They are also able to select program(s) for evaluation: conducting randomized trials to evaluate their effectiveness.
+
+A good place to start is to model the environment as a multi-armed bandit (MAB). Each program/intervention is represented by such a bandit with a stochastic causal model: at every step in the sequential environment a new *state* -- drawn from a *hyperstate* -- determines the outcomes of the population targeted.[This is a broad simplification. More accurately we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.]{.aside} 
+
+The decision the agent must make at each step is which program to implement and which to evaluate. This is different from typical MAB environments where the agent must decide one arm to pull, which in our context would be implementing and evaluating the same program (we take up the question of what actions are available to the agent in @sec-problem).
+
+For each program $k$, we model the data generating process for each individual $i$'s outcome at step $t$ as,
+
+$$
+\begin{align*}
+  Y_{it}(z) &\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
+  \\
+  \mu_{kt} &\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
+  \tau_{kt} &\sim \mathtt{Normal(\tau_k, \eta^\tau_k)}
+\end{align*}
+$$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
+where $z$ is a binary variable indicating whether a program is implemented or not. The hyperstate for each program $k$, $(\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
+$$
+\begin{align*}
+  \mu_k &\sim \mathtt{Normal}(0, \xi^\mu) \\
+  \tau_k &\sim \mathtt{Normal}(0, \xi^\tau) \\
+  \sigma_k &\sim \mathtt{Normal}^+(0, \xi^\sigma) \\
+  \eta^\mu_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\mu}) \\
+  \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
+\end{align*}
+$$ 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. 
+
+In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I'm making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}
+
+```{julia}
+#| label: states-example-data
+#| include: false
+
+ep1_states = @pipe [@transform!(DataFrame(s.programstates), :t = t) for (t,s) in enumerate(all_sim_data.state[1])] |> 
+  vcat(_...) |> 
+  select(_, Not(:progdgp))
+```
+
+```{r}
+#| label: fig-states-example
+#| fig-cap: "Population outcomes over time for 10 example programs. Ribbons represent the mean outcome $\\pm \\sigma_p$."
+#| fig-height: 6
+#| cap-location: margin
+
+ep1_states <- julia_eval("ep1_states") |> 
+  transmute(programid, t, outcome_control = μ, outcome_treated = outcome_control + τ, sd = σ) |> 
+  pivot_longer(starts_with("outcome_"), names_to = "z", names_prefix = "outcome_", values_to = "outcome") 
+
+ep1_states |> 
+  filter(t <= 15) |>  
+  ggplot(aes(t, outcome)) +
+  geom_line(aes(color = z)) +
+  geom_ribbon(aes(ymin = outcome - sd, ymax = outcome + sd, fill = z), alpha = 0.1) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Outcomes", x = "", y = "Y") +
+  facet_wrap(vars(programid), ncol = 3) +
+  theme(legend.position = "top")
+```
+
+Just as the funder is not aware of the true state of the world -- the true counterfactual model of all programs' effectiveness -- our agent never observes the state or hyperstate of a program. Instead, they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the agent has a single observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent's prior beliefs.
+
+```{r}
+#| label: fig-utility-fun
+#| fig-cap: "The exponential utility function. In this study, we have $\\alpha = 0.25$."
+#| fig-cap-location: bottom
+#| fig-width: 4
+#| column: margin
+
+utility <- function(c, alpha) 1 - exp(-alpha * c)
+expected_utility <- function(mu, sd, alpha) 1 - exp(-alpha * mu + alpha^2 * sd^2 / 2)
+
+crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |> 
+  mutate(u = utility(c, a)) |> 
+  ggplot(aes(c, u)) +
+  geom_line(data = \(x) filter(x, a == 0.25)) +
+  geom_line(aes(group = a), alpha = 0.1) +
+  labs(x = "y", y = "U(y)") +
+  coord_cartesian(ylim = c(-2, 0.5)) +
+  NULL
+``` 
+Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a _utility function_. The program outcomes mentioned above are in terms of an abstract quantity such as income. Introducing a utility function means that we want to introduce the possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility and to implement programs with lower uncertainty. The utility function used is the _exponential utility_ function
+$$
+U(y;\alpha) = 1 - e^{- \alpha y},
+$$
+where $\alpha$ represents the degree of risk aversion.
+
+If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function). 
+
+```{r}
+#| label: fig-state-util-example
+#| fig-cap: "Population expected utility over time for 10 example programs. \\begin{align*}E[U(Y)] &= 1 - e^{-\\alpha\\mu + \\alpha^2 \\sigma^2/2}\\\\Y&\\sim\\mathtt{Normal}(\\mu,\\sigma)\\end{align*}."
+#| fig-height: 6
+#| cap-location: margin
+
+ep1_states |> 
+  mutate(eu = expected_utility(outcome, sd, 0.25)) |> 
+  filter(t <= 15) |>  
+  ggplot(aes(t, eu)) +
+  geom_line(aes(color = z)) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Expected Utility", x = "", y = "E[U(Y)]") +
+  facet_wrap(vars(programid), ncol = 3) +
+  theme(legend.position = "top")
+```
+
+# The Problem {#sec-problem}
+
+# The Plans
+
+# Results
+
+For this experiment, I am going to draw 10 programs, $p \in \{1,\ldots,10\}$ per episode.
+
 
 ```{julia}
 #| label: prepare-util-data
@@ -212,7 +327,6 @@ ex_ante_reward_data <- all_rewards |>
   ungroup()  
 ```
 
-
 ```{r, fig.height=8}
 #| eval: false
 
@@ -298,7 +412,6 @@ fit <- sim_model$sample(test_stan_data, parallel_chains = 4)
 
 dr <- as_draws_rvars(fit)
 ```
-
 
 # Discussion
 
