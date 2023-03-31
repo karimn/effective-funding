@@ -10,6 +10,8 @@ execute:
 knitr:
   opts_chunk: 
     cache: true 
+reference-location: margin
+bibliography: /home/karim/Documents/library.bib
 ---
 
 ```{r}
@@ -83,23 +85,25 @@ This is a simulation study in which I first construct a probabilistic model repr
 
 # The Environment
 
-In this experiment I'm going to use as simple as possible of an environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The agent is assumed to be confronted with $K$ programs and have to decide which program(s) to fund.[In this study, we have $K = 10$.]{.aside} They will have to repeatedly make revisit this decision over a number of _steps_. They are also able to select program(s) for evaluation: conducting randomized trials to evaluate their effectiveness.
+In this experiment I'm going to use as simple as possible of an environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The agent is assumed to be confronted with the set $\mathcal{K}$ of programs and have to decide which program(s) to fund.[$\mathcal{K} = \{1,\ldots,K\}$. In this study, we have $K = 10$.]{.aside} They will have to repeatedly make revisit this decision over a number of _steps_. They are also able to select program(s) for evaluation: conducting randomized trials to evaluate their effectiveness.
 
 A good place to start is to model the environment as a multi-armed bandit (MAB). Each program/intervention is represented by such a bandit with a stochastic causal model: at every step in the sequential environment a new *state* -- drawn from a *hyperstate* -- determines the outcomes of the population targeted.[This is a broad simplification. More accurately we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.]{.aside} 
 
 The decision the agent must make at each step is which program to implement and which to evaluate. This is different from typical MAB environments where the agent must decide one arm to pull, which in our context would be implementing and evaluating the same program (we take up the question of what actions are available to the agent in @sec-problem).
 
-For each program $k$, we model the data generating process for each individual $i$'s outcome at step $t$ as,
+For each program $k$, we model the data generating process for each individual's outcome at step $t$ as,
 
 $$
 \begin{align*}
-  Y_{it}(z) &\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
+  Y_{t}(z) &\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
   \\
   \mu_{kt} &\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
   \tau_{kt} &\sim \mathtt{Normal(\tau_k, \eta^\tau_k)}
 \end{align*}
 $$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
-where $z$ is a binary variable indicating whether a program is implemented or not. The hyperstate for each program $k$, $(\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
+where $z$ is a binary variable indicating whether a program is implemented or not. We therefore denote the state of a program to be $\theta_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
+
+On the other hand, the hyperstate for each program, $\theta_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
 $$
 \begin{align*}
   \mu_k &\sim \mathtt{Normal}(0, \xi^\mu) \\
@@ -109,7 +113,7 @@ $$
   \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
 \end{align*}
 $$ 
-where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model.[With some abuse of notation, I will write $\theta_{kt}\sim\theta_k$ and $\theta_k\sim\boldsymbol{\xi}$.]{.aside} 
 
 In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I'm making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}
 
@@ -168,13 +172,13 @@ Finally, in evaluating which program to implement the agent is assumed to be max
 $$
 U(y;\alpha) = 1 - e^{- \alpha y},
 $$
-where $\alpha$ represents the degree of risk aversion.
+where $\alpha$ represents the degree of risk aversion. Typically, we would want to also take into consideration _cost-effectiveness_, however, in this formulation I assume that all programs have a unit cost.
 
 If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function). 
 
 ```{r}
 #| label: fig-state-util-example
-#| fig-cap: "Population expected utility over time for 10 example programs. \\begin{align*}E[U(Y)] &= 1 - e^{-\\alpha\\mu + \\alpha^2 \\sigma^2/2}\\\\Y&\\sim\\mathtt{Normal}(\\mu,\\sigma)\\end{align*}."
+#| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y\\sim\\theta}[U(Y)] = 1 - e^{-\\alpha\\mu + \\alpha^2 \\sigma^2/2}$."
 #| fig-height: 6
 #| cap-location: margin
 
@@ -190,6 +194,38 @@ ep1_states |>
 ```
 
 # The Problem {#sec-problem}
+
+Now that I described the environment the funder finds themselves in, I will take up the problem they are trying to solve. As described, they are confronted with $K$ programs and they must make two decisions (take two actions)
+
+1. Select one program to fund (i.e., to implement) or none.
+2. Select one program to evaluate.
+
+At every $t$, the agent must choose a _(implement, evaluate)_-tuple.
+
+$$
+a_{t} \in \mathcal{A} = \{(m,v): m \in \mathcal{K}\cup\{0\}, v \in \mathcal{K}\}.
+$$[Let $a^{m}_{kt}$ and $a^v_{kt}$ indicate if $k$ is implemented or evaluated, respectively.]{.aside}
+
+This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program.[The _exploration-exploitation_ tradeoff.]{.aside} Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states. However, we can reformulate our problem to use the agent's _beliefs_ about parameters of the programs' causal models [@Morales2020;@Kochenderfer2022]. 
+
+In that case, the problem is now _Markov Decision Process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\theta)$ over the continuous space of possible states.[Let the states of all the programs be $\theta_t = (\theta_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
+$$
+\begin{align*}
+V_\pi(b_t) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \theta) + \gamma V_\pi(b_{t+1})\right]p(o\mid\theta, a_t)b_t(\theta)\,\textrm{d}\theta\textrm{d}o \\ \\
+a_t &= \pi(b_t) \\
+R(a, \theta) &= E_{Y\sim\theta}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\theta_k}\left[U(Y_{k}(a^m_k))\right], 
+\end{align*}
+$$[In this simulation study we set the discount rate to $\gamma = 0.95$.]{.aside}
+
+where $o \in \mathcal{O}$ is the data collected based on the evaluation action for a particular program, and using it we update $b_t$ to $b_{t+1}$.
+
+So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t+1}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
+$$
+G_t = \sum_{s=t}^T \gamma^{1-s}E_{\theta_s\sim b_s}[R(a_s, \theta_s)],
+$$
+where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
+
+Unlike a typical MDP the agent does not receive the actual realized reward, but must estimate it conditional on beliefs; program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder's problem: while in a MAB we would normally observed a reward for the selected arm, or some noisy version of it, in the funder's environment, we observe an estimate of rewards for the evaluated program only -- all other rewards are inferred.[Also different from a MAB, we receive a reward from every program, or rather the population it targets.]{.aside} 
 
 # The Plans
 
@@ -416,3 +452,5 @@ dr <- as_draws_rvars(fit)
 # Discussion
 
 # Conclusion
+
+### References {-}
