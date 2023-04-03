@@ -1,10 +1,15 @@
 ---
-title: "Comparing Planning Algorithms"
+title: The Funder's Sequential Problem [Work in Progress]
+author: 
+  - name: Karim Naguib
+    email: karimn2.0@gmail.com
 format: 
   html:
     number-sections: true
     code-fold: true
     fig-width: 9 
+    toc: true
+    toc-location: left
 execute: 
   echo: false
 knitr:
@@ -63,6 +68,9 @@ actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |> FundingPOMD
 maxstep <- julia_eval("maxstep")
 nprograms <- julia_eval("nprograms")
 discount <- julia_eval("discount")
+
+plan_labels <- c("no impl" = "No Implementation", none = "No Evaluation", random = "Random (Bayesian)", freq = "Random (Frequentist)", evalsecond = "Evaluate Second Best (Bayesian)",
+                 freq_evalsecond = "Evaluate Second Best (Frequentist)", pftdpw = "PFT-DPW", best = "Best")
 ```
 
 ```{julia}
@@ -101,9 +109,9 @@ $$
   \tau_{kt} &\sim \mathtt{Normal(\tau_k, \eta^\tau_k)}
 \end{align*}
 $$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
-where $z$ is a binary variable indicating whether a program is implemented or not. We therefore denote the state of a program to be $\theta_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
+where $z$ is a binary variable indicating whether a program is implemented or not. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
 
-On the other hand, the hyperstate for each program, $\theta_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
+On the other hand, the hyperstate for each program, $\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
 $$
 \begin{align*}
   \mu_k &\sim \mathtt{Normal}(0, \xi^\mu) \\
@@ -113,7 +121,7 @@ $$
   \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
 \end{align*}
 $$ 
-where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model.[With some abuse of notation, I will write $\theta_{kt}\sim\theta_k$ and $\theta_k\sim\boldsymbol{\xi}$.]{.aside} 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step normally distributed shocks, with mean zero, alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
 
 In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I'm making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}
 
@@ -129,7 +137,6 @@ ep1_states = @pipe [@transform!(DataFrame(s.programstates), :t = t) for (t,s) in
 ```{r}
 #| label: fig-states-example
 #| fig-cap: "Population outcomes over time for 10 example programs. Ribbons represent the mean outcome $\\pm \\sigma_p$."
-#| fig-height: 6
 #| cap-location: margin
 
 ep1_states <- julia_eval("ep1_states") |> 
@@ -143,14 +150,14 @@ ep1_states |>
   geom_ribbon(aes(ymin = outcome - sd, ymax = outcome + sd, fill = z), alpha = 0.1) +
   scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
   labs(title = "Program Outcomes", x = "", y = "Y") +
-  facet_wrap(vars(programid), ncol = 3) +
+  facet_wrap(vars(programid), ncol = 5) +
   theme(legend.position = "top")
 ```
 
 Just as the funder is not aware of the true state of the world -- the true counterfactual model of all programs' effectiveness -- our agent never observes the state or hyperstate of a program. Instead, they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the agent has a single observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent's prior beliefs.
 
 ```{r}
-#| label: fig-utility-fun
+#| label: fig-utility-fig
 #| fig-cap: "The exponential utility function. In this study, we have $\\alpha = 0.25$."
 #| fig-cap-location: bottom
 #| fig-width: 4
@@ -174,12 +181,11 @@ U(y;\alpha) = 1 - e^{- \alpha y},
 $$
 where $\alpha$ represents the degree of risk aversion. Typically, we would want to also take into consideration _cost-effectiveness_, however, in this formulation I assume that all programs have a unit cost.
 
-If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function). 
+If there is uncertainty[We focus on statistical uncertainty, ignoring moral uncertainty.]{.aside} in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function). 
 
 ```{r}
 #| label: fig-state-util-example
-#| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y\\sim\\theta}[U(Y)] = 1 - e^{-\\alpha\\mu + \\alpha^2 \\sigma^2/2}$."
-#| fig-height: 6
+#| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y\\sim\\boldsymbol{\\theta}}[U(Y)] = 1 - e^{-\\alpha\\mu + \\alpha^2 \\sigma^2/2}$."
 #| cap-location: margin
 
 ep1_states |> 
@@ -189,7 +195,7 @@ ep1_states |>
   geom_line(aes(color = z)) +
   scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
   labs(title = "Program Expected Utility", x = "", y = "E[U(Y)]") +
-  facet_wrap(vars(programid), ncol = 3) +
+  facet_wrap(vars(programid), ncol = 5) +
   theme(legend.position = "top")
 ```
 
@@ -208,12 +214,12 @@ $$[Let $a^{m}_{kt}$ and $a^v_{kt}$ indicate if $k$ is implemented or evaluated, 
 
 This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program.[The _exploration-exploitation_ tradeoff.]{.aside} Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states. However, we can reformulate our problem to use the agent's _beliefs_ about parameters of the programs' causal models [@Morales2020;@Kochenderfer2022]. 
 
-In that case, the problem is now _Markov Decision Process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\theta)$ over the continuous space of possible states.[Let the states of all the programs be $\theta_t = (\theta_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
+In that case, the problem is now _Markov Decision Process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
 $$
 \begin{align*}
-V_\pi(b_t) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \theta) + \gamma V_\pi(b_{t+1})\right]p(o\mid\theta, a_t)b_t(\theta)\,\textrm{d}\theta\textrm{d}o \\ \\
+V_\pi(b_t) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t+1})\right]p(o\mid\boldsymbol{\theta}, a_t)b_t(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
 a_t &= \pi(b_t) \\
-R(a, \theta) &= E_{Y\sim\theta}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\theta_k}\left[U(Y_{k}(a^m_k))\right], 
+R(a, \boldsymbol{\theta}) &= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\boldsymbol{\theta}_k}\left[U(Y_{k}(a^m_k))\right], 
 \end{align*}
 $$[In this simulation study we set the discount rate to $\gamma = 0.95$.]{.aside}
 
@@ -221,7 +227,7 @@ where $o \in \mathcal{O}$ is the data collected based on the evaluation action f
 
 So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t+1}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
 $$
-G_t = \sum_{s=t}^T \gamma^{1-s}E_{\theta_s\sim b_s}[R(a_s, \theta_s)],
+G_t = \sum_{s=t}^T \gamma^{1-s}E_{\boldsymbol{\theta}_s\sim b_s}[R(a_s, \boldsymbol{\theta}_s)],
 $$
 where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
 
@@ -229,14 +235,79 @@ Unlike a typical MDP the agent does not receive the actual realized reward, but 
 
 # The Plans
 
+Now, we take up the question of policies.
+
+1. _No evaluation,_ in which we never evaluate any of the programs and only use our initial beliefs, $b_0$, to decide which program to implement.
+2. _Random evaluation,_ in which, at every $t$, we randomly select one of the $K$ programs to be evaluated.
+3. _Evaluate second-best,_ in which, at every $t$, we select the program that has the second highest estimated reward for evaluation.  
+4. _Particle Filter Tree with Progressive Depth Widening (PFT-DPW),_ in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate [@Sunberg2018].
+
+For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a _particle filter_ to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories. 
+
+For the random and second-best policies we also consider a simple Frequentist null hypothesis significance testing approach: we run a regression on all the observed data; test whether the treatment effect is statistically significant at the 10% level; and if so, the point estimate is assumed to be the true treatment effect, and it is assumed to be zero otherwise. Using Frequentist inference essentially ignores uncertainty, but uses the expected utility based on $\sigma$. This form of inference is meant to highlight the shortcomings of a binary decision theory based on a significance test, or any kind of threshold in lieu of quantifying uncertainty. This is of course a major simplification but helps make the argument more intuitive.[GiveWell in fact look at point estimates of cost-effectiveness and use a threshold of some multiple of the cost-effectiveness of GiveDirectly, a cash transfer program. They also use subjective adjustments to the point estimates to account for uncertainty.]{.aside}  
+
+```{julia}
+#| label: rewards-and-actions 
+#| include: false
+
+all_rewards = @pipe all_sim_data |> 
+    @subset(_, :plan_type .== "none") |> 
+    get_rewards_data.(_.state, Ref(actlist), Ref(util_model)) |>
+    [@transform!(rd[2], :sim = rd[1]) for rd in enumerate(_)] |>
+    vcat(_...) |>
+    insertcols!(_, :reward_type => "actual")
+
+obs_act = @pipe all_sim_data |> 
+  @rsubset(_, :plan_type in ["pftdpw", "random", "freq", "evalsecond", "freq_evalsecond"]) |> 
+  groupby(_, :plan_type) |> 
+  combine(_, d -> vcat(get_actions_data.(d.action)..., source = :sim)) 
+```
+
+```{r}
+#| label: ex-ante-reward
+#| include: false
+
+all_rewards <- julia_eval("all_rewards") 
+obs_act <- julia_eval("obs_act") |> 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
+
+ex_ante_reward_data <- all_rewards |> 
+  filter(step == maxstep) |> 
+  select(!step) |> 
+  group_by(sim) |> 
+  mutate(
+    ex_ante_best = ex_ante_reward >= max(ex_ante_reward),
+    reward_rank = min_rank(ex_ante_reward) - 1
+  ) |> 
+  ungroup()  
+```
+
+```{r}
+#| label: fig-actions
+#| fig-cap: "Evaluate and implement actions over $K = 15$ steps for five example episodes (rows). For each each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of _ex ante_ optimality."
+#| fig-cap-location: margin
+
+obs_act |>
+  filter(between(sim, 1, 5)) |> 
+  pivot_longer(c(implement_programs, eval_programs), names_to = "action_type", names_pattern = r"{(.+)_programs}", values_to = "pid") |> 
+  left_join(ex_ante_reward_data, by = c("sim", "pid" = "actprog")) |>
+  ggplot(aes(step, reward_rank, color = action_type)) +
+  geom_step(alpha = 0.5) +
+  geom_point(size = 0.85) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("", breaks = 0:nprograms, c(0, 10)) +
+  scale_color_discrete("Action Type", labels = c(eval = "Evaluation", implement = "Implementation")) +
+  facet_grid(cols = vars(plan_type), rows = vars(sim), scales = "free_y", labeller = labeller(plan_type = plan_labels)) +
+  theme(panel.grid.minor = element_blank(), axis.text = element_blank(), legend.position = "top", strip.text.y.right = element_blank(), strip.text.x.top = element_text(size = 7),
+        axis.ticks = element_blank())
+```
+
+
 # Results
-
-For this experiment, I am going to draw 10 programs, $p \in \{1,\ldots,10\}$ per episode.
-
 
 ```{julia}
 #| label: prepare-util-data
-#| output: false
+#| include: false
 
 do_nothing_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |> 
   get_do_nothing_plan_data(_, util_model) 
@@ -260,8 +331,10 @@ util_data = @pipe all_sim_data |>
 
 ```{r}
 #| label: util-diff-data
+#| include: false
 
-util_data <- julia_eval("util_data")
+util_data <- julia_eval("util_data") |> 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
 
 vn_util_diff <- util_data |> 
   unnest(c(actual_reward, actual_ex_ante_reward)) |> 
@@ -297,8 +370,7 @@ vn_util_diff |>
   #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
   scale_color_discrete(
     "Planning Type", 
-    labels = c("best" = "Best", "freq" = "Random (Frequentist)", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random (Bayesian)", evalsecond = "Evaluate Second Best (Bayesian)",
-               freq_evalsecond = "Evaluate Second Best (Frequentist)"), 
+    labels = plan_labels, 
     aesthetics = c("color", "fill")
   ) +
   facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
@@ -309,22 +381,33 @@ vn_util_diff |>
 ```
 
 ```{r}
+#| label: step1-returns-fig
+#| fig-cap: "Accumulated utility gain at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
+#| fig-cap-location: bottom
+#| fig-width: 4
+#| fig-height: 2
+#| column: margin 
+
 vn_util_diff |>
-  filter(step == 1, accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "evalsecond"))) |> 
+  filter(step == 1, accum, discounted, fct_match(plan_type, c("best", "random", "freq")), fct_match(reward_type, "ex_post")) |> 
   ggplot(aes(y = plan_type)) +
-  tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
+  #tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
+  tidybayes::stat_dist_halfeye(aes(x = reward_diff), alpha = 0.5, .width = c(0.5, 0.8)) +
   geom_vline(xintercept = 0, linetype = "dotted") +
   scale_y_discrete(
-    "Planning Type", 
-    labels = c("best" = "Best", "freq" = "Frequentist", "none" = "No Evaluation", "pftdpw" = "PFTDPW", random = "Random")
+    "", 
+    labels = c("best" = "Best", "freq" = "Frequentist", random = "Random")
   ) +
-  scale_x_continuous("Accumulated Utility Difference") +
-  labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
-  facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  scale_x_continuous("Accumulated Utility Gain") +
+  #labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
+  #facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  coord_cartesian(xlim = c(-0.75, 0.75)) +
   NULL
 ```
 
-```{r, fig.width=10}
+```{r}
+#| eval: false
+
 vn_util_diff |> 
   filter(!fct_match(plan_type, "best"), discounted, accum) |>
   ggplot(aes(step, reward_diff)) +
@@ -335,33 +418,6 @@ vn_util_diff |>
   theme(legend.position = "bottom")
 ```
 
-```{julia}
-all_rewards = @pipe all_sim_data |> 
-    @subset(_, :plan_type .== "none") |> 
-    get_rewards_data.(_.state, Ref(actlist), Ref(util_model)) |>
-    [@transform!(rd[2], :sim = rd[1]) for rd in enumerate(_)] |>
-    vcat(_...) |>
-    insertcols!(_, :reward_type => "actual")
-
-obs_act = @pipe [pftdpw_sim_data, random_sim_data, freq_sim_data, evalsecond_sim_data] |> 
-  [vcat(get_actions_data.(getindex(d, :, :action))..., source = :sim) for d in _] |> 
-  vcat(_..., source = :algo => ["pftdpw", "random", "freq", "evalsecond"])
-```
-
-```{r}
-all_rewards <- julia_eval("all_rewards") 
-obs_act <- julia_eval("obs_act")
-
-ex_ante_reward_data <- all_rewards |> 
-  filter(step == maxstep) |> 
-  select(!step) |> 
-  group_by(sim) |> 
-  mutate(
-    ex_ante_best = ex_ante_reward >= max(ex_ante_reward),
-    reward_rank = min_rank(ex_ante_reward) - 1
-  ) |> 
-  ungroup()  
-```
 
 ```{r, fig.height=8}
 #| eval: false
@@ -375,33 +431,6 @@ ex_ante_reward_data |>
   facet_wrap(vars(sim), scales = "free")
 ```
 
-```{r, fig.width=10, fig.height=12}
-#| fig-height: 10 
-#| eval: false
-
-obs_act |>
-  filter(between(sim, 70, 80)) |> 
-  pivot_longer(c(implement_programs, eval_programs), names_to = "action_type", names_pattern = r"{(.+)_programs}", values_to = "pid") |> 
-  left_join(ex_ante_reward_data, by = c("sim", "pid" = "actprog")) |>
-  #glimpse()
-  ggplot(aes(step, reward_rank, color = action_type)) +
-  #ggplot(aes(step, tidytext::reorder_within(pid, ex_ante_reward, sim), color = action_type)) +
-  geom_step() +
-  geom_point() +
-  # geom_hline(
-  #   aes(yintercept = actprog), 
-  #   linewidth = 2, alpha = 0.25,
-  #   data = \(d) { 
-  #     semi_join(ex_ante_reward_data, d, by = "sim") |> 
-  #       filter(ex_ante_best)
-  #   }
-  # ) +
-  scale_x_continuous(breaks = seq(maxstep)) +
-  scale_y_continuous(breaks = 0:nprograms, c(0, 10)) +
-  #tidytext::scale_y_reordered() +
-  facet_grid(cols = vars(algo), rows = vars(sim), scales = "free_y") +
-  theme(panel.grid.minor = element_blank(), legend.position = "top", axis.text.y = element_blank())
-```
 
 ```{julia}
 #| eval: false
@@ -453,4 +482,4 @@ dr <- as_draws_rvars(fit)
 
 # Conclusion
 
-### References {-}
+# References { .unnumbered }
