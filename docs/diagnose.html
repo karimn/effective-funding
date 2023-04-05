@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.313">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Karim Naguib">
+
+<title>The Funder’s Sequential Problem [Work in Progress]</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="floating slimcontent">
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="toc-section-number">1</span>  Introduction</a></li>
+  <li><a href="#the-environment" id="toc-the-environment" class="nav-link" data-scroll-target="#the-environment"><span class="toc-section-number">2</span>  The Environment</a></li>
+  <li><a href="#sec-problem" id="toc-sec-problem" class="nav-link" data-scroll-target="#sec-problem"><span class="toc-section-number">3</span>  The Problem</a></li>
+  <li><a href="#the-plans" id="toc-the-plans" class="nav-link" data-scroll-target="#the-plans"><span class="toc-section-number">4</span>  The Plans</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results"><span class="toc-section-number">5</span>  Results</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion"><span class="toc-section-number">6</span>  Conclusion</a></li>
+  </ul>
+</nav>
+</nav>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title">The Funder’s Sequential Problem [Work in Progress]</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Karim Naguib </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">Invalid Date</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="cell" data-hash="diagnose_cache/html/load-sim-data_af2127eb6648477bd23494c3c2c64bdc">
+
+</div>
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.</p>
+<p>This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.</p>
+</section>
+<section id="the-environment" class="level1 page-columns page-full" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> The Environment</h1>
+<div class="page-columns page-full"><p>In this experiment I’m going to use as simple as possible of an environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The agent is assumed to be confronted with the set <span class="math inline">\(\mathcal{K}\)</span> of programs and have to decide which program(s) to fund. They will have to repeatedly make revisit this decision over a number of <em>steps</em>. They are also able to select program(s) for evaluation: conducting randomized trials to evaluate their effectiveness.</p><div class="no-row-height column-margin column-container"><span class=""><span class="math inline">\(\mathcal{K} = \{1,\ldots,K\}\)</span>. In this study, we have <span class="math inline">\(K = 10\)</span>.</span></div></div>
+<div class="page-columns page-full"><p>A good place to start is to model the environment as a multi-armed bandit (MAB). Each program/intervention is represented by such a bandit with a stochastic causal model: at every step in the sequential environment a new <em>state</em> – drawn from a <em>hyperstate</em> – determines the outcomes of the population targeted.</p><div class="no-row-height column-margin column-container"><span class="">This is a broad simplification. More accurately we would distinguish between <em>programs</em> and <em>populations</em>; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.</span></div></div>
+<p>The decision the agent must make at each step is which program to implement and which to evaluate. This is different from typical MAB environments where the agent must decide one arm to pull, which in our context would be implementing and evaluating the same program (we take up the question of what actions are available to the agent in <a href="#sec-problem">Section&nbsp;3</a>).</p>
+<p>For each program <span class="math inline">\(k\)</span>, we model the data generating process for each individual’s outcome at step <span class="math inline">\(t\)</span> as,</p>
+<div class="page-columns page-full"><p><span class="math display">\[
+\begin{align*}
+  Y_{t}(z) &amp;\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
+  \\
+  \mu_{kt} &amp;\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
+  \tau_{kt} &amp;\sim \mathtt{Normal}(\tau_k, \eta^\tau_k)
+\end{align*}
+\]</span>  where <span class="math inline">\(z\)</span> is a binary variable indicating whether a program is implemented or not. We therefore denote the state of a program to be <span class="math inline">\(\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)\)</span>.</p><div class="no-row-height column-margin column-container"><span class="">For simplicity, <span class="math inline">\(\sigma_k\)</span> is homoskedastic and does not vary over time.</span></div></div>
+<div class="page-columns page-full"><p>On the other hand, the hyperstate for each program, <span class="math inline">\(\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)\)</span>, is drawn from the prior <span class="math display">\[
+\begin{align*}
+  \mu_k &amp;\sim \mathtt{Normal}(0, \xi^\mu) \\
+  \tau_k &amp;\sim \mathtt{Normal}(0, \xi^\tau) \\
+  \sigma_k &amp;\sim \mathtt{Normal}^+(0, \xi^\sigma) \\
+  \eta^\mu_k &amp;\sim \mathtt{Normal}^+(0, \xi^{\eta^\mu}) \\
+  \eta^\tau_k &amp;\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
+\end{align*}
+\]</span> where <span class="math inline">\(\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})\)</span> are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. This means that while each program has a fixed average baseline outcome, <span class="math inline">\(\mu_k\)</span>, and average treatment effect, <span class="math inline">\(\tau_k\)</span>, at every step normally distributed shocks, with mean zero, alter the realized averages. </p><div class="no-row-height column-margin column-container"><span class="">With some abuse of notation, I will write <span class="math inline">\(\boldsymbol{\theta_{kt}\sim\theta_k}\)</span> and <span class="math inline">\(\boldsymbol{\theta_k\sim\boldsymbol{\xi}}\)</span>.</span></div></div>
+<div class="page-columns page-full"><p>In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I’m making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.</p><div class="no-row-height column-margin column-container"><span class="">Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.</span></div></div>
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-states-example_da7afbdd91c58067086060057daa1f12">
+<div class="cell-output-display page-columns page-full">
+<div id="fig-states-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
+<figure class="figure page-columns page-full">
+<p><img src="diagnose_files/figure-html/fig-states-example-1.png" class="img-fluid figure-img" width="864"></p>
+<p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;1: Population outcomes over time for 10 example programs. Ribbons represent the mean outcome <span class="math inline">\(\pm \sigma_p\)</span>.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Just as the funder is not aware of the true state of the world – the true counterfactual model of all programs’ effectiveness – our agent never observes the state or hyperstate of a program. Instead, they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the agent has a single observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent’s prior beliefs.</p>
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-utility-fig_8cb67bebf44c6b3d87069fc927d40836">
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div id="fig-utility-fig" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="diagnose_files/figure-html/fig-utility-fig-1.png" class="img-fluid figure-img" width="384"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: The exponential utility function. In this study, we have <span class="math inline">\(\alpha = 0.25\)</span>.</figcaption><p></p>
+</figure>
+</div>
+</div></div></div>
+<p>Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a <em>utility function</em>. The program outcomes mentioned above are in terms of an abstract quantity such as income. Introducing a utility function means that we want to introduce the possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility and to implement programs with lower uncertainty. The utility function used is the <em>exponential utility</em> function <span class="math display">\[
+U(y;\alpha) = 1 - e^{- \alpha y},
+\]</span> where <span class="math inline">\(\alpha\)</span> represents the degree of risk aversion. Typically, we would want to also take into consideration <em>cost-effectiveness</em>, however, in this formulation I assume that all programs have a unit cost.</p>
+<div class="page-columns page-full"><p>If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, <span class="math inline">\(\mu_{kt} + z\cdot \tau_{kt}\)</span> and <span class="math inline">\(\sigma_k\)</span>, respectively, the expected utility would be as in <a href="#fig-state-util-example">Figure&nbsp;3</a>. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function).</p><div class="no-row-height column-margin column-container"><span class="">We focus on statistical uncertainty, ignoring moral uncertainty.</span></div></div>
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-state-util-example_d4756303d9ff6c993e9d11664abadc94">
+<div class="cell-output-display page-columns page-full">
+<div id="fig-state-util-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
+<figure class="figure page-columns page-full">
+<p><img src="diagnose_files/figure-html/fig-state-util-example-1.png" class="img-fluid figure-img" width="864"></p>
+<p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;3: Population expected utility over time for 10 example programs. <span class="math inline">\(E_{Y_{kt}\sim\boldsymbol{\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\alpha(\mu_{kt} + z\cdot\tau_{kt}) + \alpha^2 \sigma_k^2/2}\)</span>.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-problem" class="level1 page-columns page-full" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> The Problem</h1>
+<p>Now that I described the environment the funder finds themselves in, I will take up the problem they are trying to solve. As described, they are confronted with <span class="math inline">\(K\)</span> programs and they must make two decisions (take two actions)</p>
+<ol type="1">
+<li>Select one program to fund (i.e., to implement) or none.</li>
+<li>Select one program to evaluate or none.</li>
+</ol>
+<p>At every <span class="math inline">\(t\)</span>, the agent must choose a <em>(implement, evaluate)</em>-tuple.</p>
+<div class="page-columns page-full"><p><span class="math display">\[
+a_{t} \in \mathcal{A} = \{(m,v): m, v\in \mathcal{K}\cup\{0\}\}.
+\]</span></p><div class="no-row-height column-margin column-container"><span class="">Let <span class="math inline">\(a^{m}_{kt}\)</span> and <span class="math inline">\(a^v_{kt}\)</span> indicate if <span class="math inline">\(k\)</span> is implemented or evaluated, respectively.</span></div></div>
+<div class="page-columns page-full"><p>This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program. Nevertheless, we are confronted by an <em>evaluative</em> problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as <em>sequential</em> in the sense that an action at any step does not change future states. However, we can reformulate our problem to use the agent’s <em>beliefs</em> about parameters of the programs’ causal models <span class="citation" data-cites="Morales2020 Kochenderfer2022">(<a href="#ref-Morales2020" role="doc-biblioref">Morales 2020</a>; <a href="#ref-Kochenderfer2022" role="doc-biblioref">Kochenderfer, Wheeler, and Wray 2022</a>)</span>.</p><div class="no-row-height column-margin column-container"><span class="">The <em>exploration-exploitation</em> tradeoff.</span></div></div>
+<div class="page-columns page-full"><p>In that case, the problem is now <em>Markov Decision Process</em> (MDP). The agent needs a <em>policy</em>, <span class="math inline">\(\pi(b)\)</span>, that selects what action to take given the belief <span class="math inline">\(b_t(\boldsymbol{\theta})\)</span> over the continuous space of possible states. Putting this together we get the <em>state-value</em> function <span id="eq-problem"><span class="math display">\[
+\begin{align*}
+V_\pi(b_{t-1}) &amp;= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t})\right]p(o\mid\boldsymbol{\theta}, a_t)b_{t-1}(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
+a_t &amp;= \pi(b_t) \\
+R(a, \boldsymbol{\theta}) &amp;= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\boldsymbol{\theta}_k}\left[U(Y_{k}(a^m_k))\right],
+\end{align*}
+\tag{1}\]</span></span></p><div class="no-row-height column-margin column-container"><span class="">Let the states of all the programs be <span class="math inline">\(\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}\)</span>.</span><span class="">In this simulation study we set the discount rate to <span class="math inline">\(\gamma = 0.95\)</span>.</span></div></div>
+<p>where <span class="math inline">\(o \in \mathcal{O}\)</span> is the data collected based on the evaluation action for a particular program, and using it we update <span class="math inline">\(b_{t-1}\)</span> to <span class="math inline">\(b_{t}\)</span>.</p>
+<div class="page-columns page-full"><p>So given the current belief <span class="math inline">\(b_t\)</span> and the policy <span class="math inline">\(\pi\)</span>, the agent estimates both the immediate reward and future discounted rewards – given an updated belief <span class="math inline">\(b_{t}\)</span> continguent on the data collected <span class="math inline">\(o\)</span> – and so forth recursively. Based on this the accumulated returns would be <span class="math display">\[
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+\]</span> where <span class="math inline">\(T\)</span> is the terminal step.</p><div class="no-row-height column-margin column-container"><span class="">In this study, we set <span class="math inline">\(T = 15\)</span>.</span></div></div>
+<div class="page-columns page-full"><p>Unlike a typical MDP the agent does not receive the actual realized reward, but must estimate it conditional on beliefs; program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder’s problem: while in a MAB we would normally observed a reward for the selected arm, or some noisy version of it, in the funder’s environment, we observe an estimate of rewards for the evaluated program only – all other rewards are inferred.</p><div class="no-row-height column-margin column-container"><span class="">Also different from a MAB, we receive a reward from every program, or rather the population it targets.</span></div></div>
+</section>
+<section id="the-plans" class="level1 page-columns page-full" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> The Plans</h1>
+<p>Now, we take up the question of policies.</p>
+<ol type="1">
+<li><em>No evaluation,</em> in which we never evaluate any of the programs and only use our initial beliefs, <span class="math inline">\(b_0\)</span>, to decide which program to implement.</li>
+<li><em>Random evaluation,</em> in which, at every <span class="math inline">\(t\)</span>, we randomly select one of the <span class="math inline">\(K\)</span> programs to be evaluated.</li>
+<li><em>Evaluate second-best,</em> in which, at every <span class="math inline">\(t\)</span>, we select the program that has the second highest estimated reward for evaluation.<br>
+</li>
+<li><em>Particle Filter Tree with Progressive Depth Widening (PFT-DPW),</em> in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate <span class="citation" data-cites="Sunberg2018">(<a href="#ref-Sunberg2018" role="doc-biblioref">Sunberg and Kochenderfer 2018</a>)</span>.</li>
+</ol>
+<p>For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a <em>particle filter</em> to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories.</p>
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-actions_ab0504d1f8462f8dec2798cbdb2c4fdc">
+<div class="cell-output-display page-columns page-full">
+<div id="fig-actions" class="quarto-figure quarto-figure-center anchored page-columns page-full">
+<figure class="figure page-columns page-full">
+<p><img src="diagnose_files/figure-html/fig-actions-1.png" class="img-fluid figure-img" width="864"></p>
+<p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;4: Evaluate and implement actions over <span class="math inline">\(K = 15\)</span> steps for five example episodes (rows). For each each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of <em>ex ante</em> optimality.</figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="page-columns page-full"><p>For the random and second-best policies we also consider a simple Frequentist null hypothesis significance testing approach: we run a regression on all the observed data; test whether the treatment effect is statistically significant at the 10% level; and if so, the point estimate is assumed to be the true treatment effect, and it is assumed to be zero otherwise. Using Frequentist inference essentially ignores uncertainty, but uses the expected utility based on <span class="math inline">\(\sigma\)</span>. This form of inference is meant to highlight the shortcomings of a binary decision theory based on a significance test, or any kind of threshold in lieu of quantifying uncertainty. This is of course a major simplification but helps make the argument more intuitive.</p><div class="no-row-height column-margin column-container"><span class="">GiveWell in fact look at point estimates of cost-effectiveness and use a threshold of some multiple of the cost-effectiveness of GiveDirectly, a cash transfer program. They also use subjective adjustments to the point estimates to account for uncertainty.</span></div></div>
+<p>The reasoning behind this selection of policies/algorithms/heuristics is not to identify an optimal one, but to consider how some commonly used approaches might compare to each other. In particular, the Frequentist no-evaluation and random policies are the closest to what funders and implementers typically do.</p>
+<div class="page-columns page-full"><p>So given this set of policies, <span class="math inline">\(\Pi\)</span>, the meta-problem that we want to solve is choosing the best policy, <span id="eq-meta-problem"><span class="math display">\[
+\max_{\pi \in \Pi} W_T(\pi) = E_{\boldsymbol{\theta}\sim\boldsymbol{\xi}}\left\{ \sum_{t=1}^T\gamma^{t-1}E_{\boldsymbol{\theta}_t\sim\boldsymbol{\theta}}[R(\pi(b_t), \boldsymbol{\theta}_t)] \right\}.
+\tag{2}\]</span></span></p><div class="no-row-height column-margin column-container"><span class="">Notice how this differs from the funder’s problem in <a href="#eq-problem">Equation&nbsp;1</a>: here we assume we know the hyperstates and states which we draw from the prior, <span class="math inline">\(\boldsymbol{\xi}\)</span>, not from beliefs, <span class="math inline">\(b\)</span>.</span></div></div>
+</section>
+<section id="results" class="level1 page-columns page-full" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Results</h1>
+<div class="page-columns page-full"><p>This simulation experiment runs <span class="math inline">\(S = 270\)</span> episodes.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> For each one, we draw the <span class="math inline">\(K\)</span> hyperstates from the prior, <span class="math inline">\(\boldsymbol{\theta}_s\sim\boldsymbol{\xi}\)</span>, then for each <span class="math inline">\(1\leq t \leq T\)</span>, we draw the states, <span class="math inline">\(\boldsymbol{\theta}_{st}\sim\boldsymbol{\theta}_s\)</span>. We then run each of our policies through this episode, deciding on which programs to implement and which are to be evaluated to update beliefs, <span class="math inline">\(b_{st}\)</span>. That means we observe the trajectory of <span class="math inline">\((b_{s,0}, a_{s,1}, o_{s,1}, b_{s,1}, a_{s,2}, o_{s,2}, b_{s,2},\ldots)\)</span> for each policy given the same states and hyperstates.</p><div class="no-row-height column-margin column-container"><span class="">We actually solve <a href="#eq-meta-problem">Equation&nbsp;2</a> as <span class="math display">\[
+\max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}).
+\]</span></span></div></div>
+<p>To evaluate the policies’ performance we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In <a href="#fig-returns-compare">Figure&nbsp;5</a>, we observe how this difference evolves over the <span class="math inline">\(T\)</span> steps of the episode: we see that the best performers are the PFT-DPW and Bayesian evaluate-second-best policies. We observe lower performance from the two Frequentist policies and the random Bayesian policy. Lastly, the worst performer is the no-evaluation policy where we make decision based on <span class="math inline">\(b_0\)</span> only.</p>
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-returns-compare_89f41d723055ef4766f7ec64d451e028">
+<div class="cell-output-display page-columns page-full">
+<div id="fig-returns-compare" class="quarto-figure quarto-figure-center anchored page-columns page-full">
+<figure class="figure page-columns page-full">
+<p><img src="diagnose_files/figure-html/fig-returns-compare-1.png" class="img-fluid figure-img" width="864"></p>
+<p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;5: Mean accumulated discounted utility gains, compared to a no program implementation policy, <span class="math display">\[\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi^\emptyset),\]</span> where <span class="math inline">\(\pi^\emptyset(b) = (0,0),\forall b.\)</span></figcaption><p></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-returns-percent-compare_56f7a4ca0d33f2ffaf762aeab96878fc">
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div id="fig-returns-percent-compare" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="diagnose_files/figure-html/fig-returns-percent-compare-1.png" class="img-fluid figure-img" width="384"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;6: Percentage increase in mean accumulated discounted utility gain, <span class="math inline">\(\frac{\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi')}{\widetilde{W}_T(\pi')}.\)</span></figcaption><p></p>
+</figure>
+</div>
+</div></div></div>
+<p>To make this comparison clearer we calculate the percentage difference between our highest performing policies with: (i) the no-evaluation policy and (ii) the random Bayesian policy (which is roughly on par with the random Frequentist policy). Compared to the policy of never re-evaluating a program once it is selected for implementation, we observe average accumulated welfare for the Bayesian evaluate-second-best and the PFT-DPW offline that is more than 20% higher after four episode steps and passing 30% after seven steps. Compared the Frequentist policies (evaluate-second-best and random) the highest performers are around 20% better after five steps.</p>
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-step1-returns_2b21fc2fe322518cf39adf16744c3c0a">
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div id="fig-step1-returns" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="diagnose_files/figure-html/fig-step1-returns-1.png" class="img-fluid figure-img" width="384"></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;7: The distribution of accumulated utility gains at <span class="math inline">\(t = 1\)</span>, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy.</figcaption><p></p>
+</figure>
+</div>
+</div></div></div>
+</section>
+<section id="conclusion" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Conclusion</h1>
+<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-18_55dd99a02d8cbe19811b9956cebaaab9">
+
+</div>
+
+
+<!-- -->
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-Kochenderfer2022" class="csl-entry" role="doc-biblioentry">
+Kochenderfer, Mykel J., Tim A. Wheeler, and Kyle H. Wray. 2022. <em><span class="nocase">Algorithms for decision making</span></em>. <a href="https://algorithmsbook.com/files/dm.pdf">https://algorithmsbook.com/files/dm.pdf</a>.
+</div>
+<div id="ref-Morales2020" class="csl-entry" role="doc-biblioentry">
+Morales, Miguel. 2020. <em><span>Grokking Deep Reinforcement Learning</span></em>. Manning Publications Co.
+</div>
+<div id="ref-Sunberg2018" class="csl-entry" role="doc-biblioentry">
+Sunberg, Zachary N., and Mykel J. Kochenderfer. 2018. <span>“<span class="nocase">Online algorithms for POMDPs with continuous state, action, and observation spaces</span>.”</span> <em>Proceedings International Conference on Automated Planning and Scheduling, ICAPS</em> 2018-June: 259–63. <a href="https://doi.org/10.1609/icaps.v28i1.13882">https://doi.org/10.1609/icaps.v28i1.13882</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Why not more? Each simulated episode can take a significant amount of time, particularly when using the PFT-DPW policy which runs 1,000 iterations at every step before selecting a program for evaluation. Even simpler policies, such as the random policies, take some time when we use a Bayesian model to update beliefs; we fit all the observed data for a program at every new evaluation.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  const viewSource = window.document.getElementById('quarto-view-source') ||
+                     window.document.getElementById('quarto-code-tools-source');
+  if (viewSource) {
+    const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+    viewSource.addEventListener("click", function(e) {
+      if (sourceUrl) {
+        // rstudio viewer pane
+        if (/\bcapabilities=\b/.test(window.location)) {
+          window.open(sourceUrl);
+        } else {
+          window.location.href = sourceUrl;
+        }
+      } else {
+        const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+        modal.show();
+      }
+      return false;
+    });
+  }
+  function toggleCodeHandler(show) {
+    return function(e) {
+      const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+      for (let i=0; i<detailsSrc.length; i++) {
+        const details = detailsSrc[i].parentElement;
+        if (show) {
+          details.open = true;
+        } else {
+          details.removeAttribute("open");
+        }
+      }
+      const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+      const fromCls = show ? "hidden" : "unhidden";
+      const toCls = show ? "unhidden" : "hidden";
+      for (let i=0; i<cellCodeDivs.length; i++) {
+        const codeDiv = cellCodeDivs[i];
+        if (codeDiv.classList.contains(fromCls)) {
+          codeDiv.classList.remove(fromCls);
+          codeDiv.classList.add(toCls);
+        } 
+      }
+      return false;
+    }
+  }
+  const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+  if (hideAllCode) {
+    hideAllCode.addEventListener("click", toggleCodeHandler(false));
+  }
+  const showAllCode = window.document.getElementById("quarto-show-all-code");
+  if (showAllCode) {
+    showAllCode.addEventListener("click", toggleCodeHandler(true));
+  }
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<pre class="markdown" data-shortcodes="false"><code>---
+title: The Funder's Sequential Problem [Work in Progress]
+author: 
+  - name: Karim Naguib
+    email: karimn2.0@gmail.com
+date: --- 
+format: 
+  html:
+    number-sections: true
+    code-tools: true
+    fig-width: 9 
+    toc: true
+    toc-location: left
+execute: 
+  echo: false
+knitr:
+  opts_chunk: 
+    cache: true 
+bibliography: /home/karim/Documents/library.bib
+---
+
+quarto-executable-code-5450563D
+
+```r
+#| label: r-setup
+#| include: false
+
+library(JuliaCall)
+library(tidyverse)
+library(posterior)
+library(tidybayes)
+
+theme_set(theme_minimal())
+```
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: julia-setup
+#| include: false
+
+import Pkg
+Pkg.activate(".")
+
+using FundingPOMDPs
+using MCTS, POMDPs, D3Trees, ParticleFilters, Distributions
+using DataFrames, DataFramesMeta
+using Pipe, Serialization
+
+import SplitApplyCombine
+
+include("diag_util.jl")
+```
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: params
+#| include: false
+
+sim_file_suffix = "_1000"
+util_model = ExponentialUtilityModel(0.25)
+discount = 0.95
+accum_rewards = true 
+maxstep = 15
+use_ex_ante_reward = true 
+nprograms = 10
+actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |&gt; FundingPOMDPs.actions(_).actions
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| include: false
+
+maxstep &lt;- julia_eval("maxstep")
+nprograms &lt;- julia_eval("nprograms")
+discount &lt;- julia_eval("discount")
+
+plan_labels &lt;- c("no impl" = "No Implementation", none = "No Evaluation", random = "Random (Bayesian)", freq = "Random (Frequentist)", evalsecond = "Evaluate Second Best (Bayesian)",
+                 freq_evalsecond = "Evaluate Second Best (Frequentist)", pftdpw = "PFT-DPW", best = "Best")
+```
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: load-sim-data
+#| output: false
+
+all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls") 
+```
+
+# Introduction
+
+The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.
+
+This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.
+
+# The Environment
+
+In this experiment I'm going to use as simple as possible of an environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The agent is assumed to be confronted with the set $\mathcal{K}$ of programs and have to decide which program(s) to fund.[$\mathcal{K} = \{1,\ldots,K\}$. In this study, we have $K = 10$.]{.aside} They will have to repeatedly make revisit this decision over a number of _steps_. They are also able to select program(s) for evaluation: conducting randomized trials to evaluate their effectiveness.
+
+A good place to start is to model the environment as a multi-armed bandit (MAB). Each program/intervention is represented by such a bandit with a stochastic causal model: at every step in the sequential environment a new *state* -- drawn from a *hyperstate* -- determines the outcomes of the population targeted.[This is a broad simplification. More accurately we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.]{.aside} 
+
+The decision the agent must make at each step is which program to implement and which to evaluate. This is different from typical MAB environments where the agent must decide one arm to pull, which in our context would be implementing and evaluating the same program (we take up the question of what actions are available to the agent in @sec-problem).
+
+For each program $k$, we model the data generating process for each individual's outcome at step $t$ as,
+
+$$
+\begin{align*}
+  Y_{t}(z) &amp;\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
+  \\
+  \mu_{kt} &amp;\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
+  \tau_{kt} &amp;\sim \mathtt{Normal}(\tau_k, \eta^\tau_k)
+\end{align*}
+$$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
+where $z$ is a binary variable indicating whether a program is implemented or not. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
+
+On the other hand, the hyperstate for each program, $\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
+$$
+\begin{align*}
+  \mu_k &amp;\sim \mathtt{Normal}(0, \xi^\mu) \\
+  \tau_k &amp;\sim \mathtt{Normal}(0, \xi^\tau) \\
+  \sigma_k &amp;\sim \mathtt{Normal}^+(0, \xi^\sigma) \\
+  \eta^\mu_k &amp;\sim \mathtt{Normal}^+(0, \xi^{\eta^\mu}) \\
+  \eta^\tau_k &amp;\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
+\end{align*}
+$$ 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step normally distributed shocks, with mean zero, alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
+
+In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I'm making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: states-example-data
+#| include: false
+
+ep1_states = @pipe [@transform!(DataFrame(s.programstates), :t = t) for (t,s) in enumerate(all_sim_data.state[1])] |&gt; 
+  vcat(_...) |&gt; 
+  select(_, Not(:progdgp))
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-states-example
+#| fig-cap: "Population outcomes over time for 10 example programs. Ribbons represent the mean outcome $\\pm \\sigma_p$."
+#| cap-location: margin
+
+ep1_states &lt;- julia_eval("ep1_states") |&gt; 
+  transmute(programid, t, outcome_control = μ, outcome_treated = outcome_control + τ, sd = σ) |&gt; 
+  pivot_longer(starts_with("outcome_"), names_to = "z", names_prefix = "outcome_", values_to = "outcome") 
+
+ep1_states |&gt; 
+  filter(t &lt;= 15) |&gt;  
+  ggplot(aes(t, outcome)) +
+  geom_line(aes(color = z)) +
+  geom_ribbon(aes(ymin = outcome - sd, ymax = outcome + sd, fill = z), alpha = 0.1) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Outcomes", x = "", y = "Y") +
+  facet_wrap(vars(programid), ncol = 5) +
+  theme(legend.position = "top")
+```
+
+Just as the funder is not aware of the true state of the world -- the true counterfactual model of all programs' effectiveness -- our agent never observes the state or hyperstate of a program. Instead, they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the agent has a single observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent's prior beliefs.
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-utility-fig
+#| fig-cap: "The exponential utility function. In this study, we have $\\alpha = 0.25$."
+#| fig-cap-location: bottom
+#| fig-width: 4
+#| fig-height: 4
+#| column: margin
+
+utility &lt;- function(c, alpha) 1 - exp(-alpha * c)
+expected_utility &lt;- function(mu, sd, alpha) 1 - exp(-alpha * mu + alpha^2 * sd^2 / 2)
+
+crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |&gt; 
+  mutate(u = utility(c, a)) |&gt; 
+  ggplot(aes(c, u)) +
+  geom_line(data = \(x) filter(x, a == 0.25)) +
+  geom_line(aes(group = a), alpha = 0.1) +
+  labs(x = "y", y = "U(y)") +
+  coord_cartesian(ylim = c(-2, 0.5)) +
+  NULL
+``` 
+Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a _utility function_. The program outcomes mentioned above are in terms of an abstract quantity such as income. Introducing a utility function means that we want to introduce the possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility and to implement programs with lower uncertainty. The utility function used is the _exponential utility_ function
+$$
+U(y;\alpha) = 1 - e^{- \alpha y},
+$$
+where $\alpha$ represents the degree of risk aversion. Typically, we would want to also take into consideration _cost-effectiveness_, however, in this formulation I assume that all programs have a unit cost.
+
+If there is uncertainty[We focus on statistical uncertainty, ignoring moral uncertainty.]{.aside} in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function). 
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-state-util-example
+#| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y_{kt}\\sim\\boldsymbol{\\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\\alpha(\\mu_{kt} + z\\cdot\\tau_{kt}) + \\alpha^2 \\sigma_k^2/2}$."
+#| cap-location: margin
+
+ep1_states |&gt; 
+  mutate(eu = expected_utility(outcome, sd, 0.25)) |&gt; 
+  filter(t &lt;= 15) |&gt;  
+  ggplot(aes(t, eu)) +
+  geom_line(aes(color = z)) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Expected Utility", x = "", y = "E[U(Y)]") +
+  facet_wrap(vars(programid), ncol = 5) +
+  theme(legend.position = "top")
+```
+
+# The Problem {#sec-problem}
+
+Now that I described the environment the funder finds themselves in, I will take up the problem they are trying to solve. As described, they are confronted with $K$ programs and they must make two decisions (take two actions)
+
+1. Select one program to fund (i.e., to implement) or none.
+2. Select one program to evaluate or none.
+
+At every $t$, the agent must choose a _(implement, evaluate)_-tuple.
+
+$$
+a_{t} \in \mathcal{A} = \{(m,v): m, v\in \mathcal{K}\cup\{0\}\}.
+$$[Let $a^{m}_{kt}$ and $a^v_{kt}$ indicate if $k$ is implemented or evaluated, respectively.]{.aside}
+
+This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program.[The _exploration-exploitation_ tradeoff.]{.aside} Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states. However, we can reformulate our problem to use the agent's _beliefs_ about parameters of the programs' causal models [@Morales2020;@Kochenderfer2022]. 
+
+In that case, the problem is now _Markov Decision Process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
+$$
+\begin{align*}
+V_\pi(b_{t-1}) &amp;= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t})\right]p(o\mid\boldsymbol{\theta}, a_t)b_{t-1}(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
+a_t &amp;= \pi(b_t) \\
+R(a, \boldsymbol{\theta}) &amp;= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\boldsymbol{\theta}_k}\left[U(Y_{k}(a^m_k))\right], 
+\end{align*}
+$${#eq-problem}[In this simulation study we set the discount rate to $\gamma = 0.95$.]{.aside}
+
+where $o \in \mathcal{O}$ is the data collected based on the evaluation action for a particular program, and using it we update $b_{t-1}$ to $b_{t}$.
+
+So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
+$$
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+$$
+where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
+
+Unlike a typical MDP the agent does not receive the actual realized reward, but must estimate it conditional on beliefs; program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder's problem: while in a MAB we would normally observed a reward for the selected arm, or some noisy version of it, in the funder's environment, we observe an estimate of rewards for the evaluated program only -- all other rewards are inferred.[Also different from a MAB, we receive a reward from every program, or rather the population it targets.]{.aside} 
+
+# The Plans
+
+Now, we take up the question of policies.
+
+1. _No evaluation,_ in which we never evaluate any of the programs and only use our initial beliefs, $b_0$, to decide which program to implement.
+2. _Random evaluation,_ in which, at every $t$, we randomly select one of the $K$ programs to be evaluated.
+3. _Evaluate second-best,_ in which, at every $t$, we select the program that has the second highest estimated reward for evaluation.  
+4. _Particle Filter Tree with Progressive Depth Widening (PFT-DPW),_ in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate [@Sunberg2018].
+
+For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a _particle filter_ to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories. 
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: rewards-and-actions 
+#| include: false
+
+all_rewards = @pipe all_sim_data |&gt; 
+    @subset(_, :plan_type .== "none") |&gt; 
+    get_rewards_data.(_.state, Ref(actlist), Ref(util_model)) |&gt;
+    [@transform!(rd[2], :sim = rd[1]) for rd in enumerate(_)] |&gt;
+    vcat(_...) |&gt;
+    insertcols!(_, :reward_type =&gt; "actual")
+
+obs_act = @pipe all_sim_data |&gt; 
+  @rsubset(_, :plan_type in ["pftdpw", "random", "freq", "evalsecond", "freq_evalsecond"]) |&gt; 
+  groupby(_, :plan_type) |&gt; 
+  combine(_, d -&gt; vcat(get_actions_data.(d.action)..., source = :sim)) 
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| label: ex-ante-reward
+#| include: false
+
+all_rewards &lt;- julia_eval("all_rewards") 
+obs_act &lt;- julia_eval("obs_act") |&gt; 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
+
+ex_ante_reward_data &lt;- all_rewards |&gt; 
+  filter(step == maxstep) |&gt; 
+  select(!step) |&gt; 
+  group_by(sim) |&gt; 
+  mutate(
+    ex_ante_best = ex_ante_reward &gt;= max(ex_ante_reward),
+    reward_rank = min_rank(ex_ante_reward) - 1
+  ) |&gt; 
+  ungroup()  
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-actions
+#| fig-cap: "Evaluate and implement actions over $K = 15$ steps for five example episodes (rows). For each each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of _ex ante_ optimality."
+#| fig-cap-location: margin
+
+obs_act |&gt;
+  filter(between(sim, 1, 5)) |&gt; 
+  pivot_longer(c(implement_programs, eval_programs), names_to = "action_type", names_pattern = r"{(.+)_programs}", values_to = "pid") |&gt; 
+  left_join(ex_ante_reward_data, by = c("sim", "pid" = "actprog")) |&gt;
+  ggplot(aes(step, reward_rank, color = action_type)) +
+  geom_step(alpha = 0.5) +
+  geom_point(size = 0.85) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("", breaks = 0:nprograms, c(0, 10)) +
+  scale_color_discrete("Action Type", labels = c(eval = "Evaluation", implement = "Implementation")) +
+  facet_grid(cols = vars(plan_type), rows = vars(sim), scales = "free_y", labeller = labeller(plan_type = plan_labels)) +
+  theme(panel.grid.minor = element_blank(), axis.text = element_blank(), legend.position = "top", strip.text.y.right = element_blank(), strip.text.x.top = element_text(size = 7),
+        axis.ticks = element_blank())
+```
+
+For the random and second-best policies we also consider a simple Frequentist null hypothesis significance testing approach: we run a regression on all the observed data; test whether the treatment effect is statistically significant at the 10% level; and if so, the point estimate is assumed to be the true treatment effect, and it is assumed to be zero otherwise. Using Frequentist inference essentially ignores uncertainty, but uses the expected utility based on $\sigma$. This form of inference is meant to highlight the shortcomings of a binary decision theory based on a significance test, or any kind of threshold in lieu of quantifying uncertainty. This is of course a major simplification but helps make the argument more intuitive.[GiveWell in fact look at point estimates of cost-effectiveness and use a threshold of some multiple of the cost-effectiveness of GiveDirectly, a cash transfer program. They also use subjective adjustments to the point estimates to account for uncertainty.]{.aside}  
+
+The reasoning behind this selection of policies/algorithms/heuristics is not to identify an optimal one, but to consider how some commonly used approaches might compare to each other. In particular, the Frequentist no-evaluation and random policies are the closest to what funders and implementers typically do.
+
+So given this set of policies, $\Pi$, the meta-problem that we want to solve is choosing the best policy,
+$$
+\max_{\pi \in \Pi} W_T(\pi) = E_{\boldsymbol{\theta}\sim\boldsymbol{\xi}}\left\{ \sum_{t=1}^T\gamma^{t-1}E_{\boldsymbol{\theta}_t\sim\boldsymbol{\theta}}[R(\pi(b_t), \boldsymbol{\theta}_t)] \right\}. 
+$${#eq-meta-problem}[Notice how this differs from the funder's problem in @eq-problem: here we assume we know the hyperstates and states which we draw from the prior, $\boldsymbol{\xi}$, not from beliefs, $b$.]{.aside}
+
+  
+# Results
+
+quarto-executable-code-5450563D
+
+```julia
+#| label: prepare-util-data
+#| include: false
+
+do_nothing_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |&gt; 
+  get_do_nothing_plan_data(_, util_model) 
+
+do_best_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |&gt;
+    dropmissing(_, :state) |&gt; 
+    @select(
+        _,
+        :actual_reward = map(get_program_reward, :state),
+        :actual_ex_ante_reward = map(s -&gt; get_program_reward(s, eval_getter = dgp), :state),
+        :plan_type = "best"
+    )
+
+util_data = @pipe all_sim_data |&gt; 
+    vcat(_, do_best_reward, do_nothing_reward, cols = :union) |&gt; 
+    @select!(_, :plan_type, :actual_reward, :actual_ex_ante_reward, :step = repeat([collect(1:maxstep)], length(:plan_type))) |&gt; 
+    groupby(_, :plan_type) |&gt; 
+    transform!(_, eachindex =&gt; :sim) |&gt; 
+    flatten(_, Not([:plan_type, :sim]))
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| label: util-diff-data
+#| include: false
+
+util_data &lt;- julia_eval("util_data") |&gt; 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
+
+n_episodes &lt;- filter(util_data, step == 1, fct_match(plan_type, "none")) |&gt; nrow()
+
+vn_util_diff &lt;- util_data |&gt; 
+  unnest(c(actual_reward, actual_ex_ante_reward)) |&gt; 
+  pivot_longer(!c(sim, plan_type, step), names_to = "reward_type", names_pattern = r"{actual_(.*)_reward}", values_to = "reward") |&gt; 
+  mutate(reward_type = coalesce(reward_type, "ex_post")) %&gt;%  
+  left_join(filter(., fct_match(plan_type, "no impl")) |&gt; select(!plan_type), by = c("reward_type", "sim", "step"), suffix = c("", "_no_impl")) |&gt; 
+  filter(!fct_match(plan_type, "no impl")) |&gt; 
+  mutate(reward_diff = reward - reward_no_impl) |&gt; 
+  arrange(step) |&gt; 
+  group_by(plan_type, reward_type, sim) |&gt; 
+  mutate(
+    discounted_reward_diff = (discount^(step - 1)) * reward_diff,
+    accum_reward_diff = cumsum(reward_diff),
+    discounted_accum_reward_diff = cumsum(discounted_reward_diff)
+  ) |&gt; 
+  ungroup() |&gt; 
+  pivot_longer(c(reward_diff, discounted_reward_diff, accum_reward_diff, discounted_accum_reward_diff), values_to = "reward_diff") |&gt; 
+  mutate(
+    accum = str_detect(name, fixed("accum")),
+    discounted = str_detect(name, fixed("discounted"))
+  ) |&gt; 
+  select(!name)
+```
+
+This simulation experiment runs $S = `r n_episodes`$ episodes.^[Why not more? Each simulated episode can take a significant amount of time, particularly when using the PFT-DPW policy which runs 1,000 iterations at every step before selecting a program for evaluation. Even simpler policies, such as the random policies, take some time when we use a Bayesian model to update beliefs; we fit all the observed data for a program at every new evaluation.] For each one, we draw the $K$ hyperstates from the prior, $\boldsymbol{\theta}_s\sim\boldsymbol{\xi}$, then for each $1\leq t \leq T$, we draw the states, $\boldsymbol{\theta}_{st}\sim\boldsymbol{\theta}_s$. We then run each of our policies through this episode, deciding on which programs to implement and which are to be evaluated to update beliefs, $b_{st}$. That means we observe the trajectory of $(b_{s,0}, a_{s,1}, o_{s,1}, b_{s,1}, a_{s,2}, o_{s,2}, b_{s,2},\ldots)$ for each policy given the same states and hyperstates.[We actually solve @eq-meta-problem as 
+$$
+\max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}). 
+$$]{.aside}  
+
+To evaluate the policies' performance we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In @fig-returns-compare, we observe how this difference evolves over the $T$ steps of the episode: we see that the best performers are the PFT-DPW and Bayesian evaluate-second-best policies. We observe lower performance from the two Frequentist policies and the random Bayesian policy. Lastly, the worst performer is the no-evaluation policy where we make decision based on $b_0$ only. 
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-returns-compare
+#| fig-cap: Mean accumulated discounted utility gains, compared to a no program implementation policy, $$\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi^\emptyset),$$ where $\pi^\emptyset(b) = (0,0),\forall b.$ 
+#| fig-cap-location: margin
+
+vn_util_diff |&gt;
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "random", "none", "evalsecond", "freq_evalsecond")), fct_match(reward_type, "ex_post")) |&gt; 
+  ggplot(aes(step)) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("Mean Accumulated Utility Gains", breaks = seq(0, 2, 0.1)) +
+  #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
+  scale_color_discrete(
+    "Policy", 
+    labels = plan_labels, 
+    aesthetics = c("color", "fill")
+  ) +
+  # facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  # labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
+  theme(panel.grid.minor.x = element_blank()) +
+  guides(linetype = "none") +
+  NULL
+```
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-returns-percent-compare
+#| fig-width: 4
+#| fig-height: 3
+#| fig-cap: Percentage increase in mean accumulated discounted utility gain, $\frac{\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi')}{\widetilde{W}_T(\pi')}.$
+#| fig-cap-location: bottom
+#| column: margin 
+
+vn_util_diff |&gt;
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "random", "none")), fct_match(reward_type, "ex_post")) |&gt; 
+  group_by(plan_type, step) |&gt; 
+  summarize(mean_reward_diff = mean(reward_diff), .groups = "drop") |&gt;
+  pivot_wider(id_cols = step, names_from = plan_type, values_from = mean_reward_diff) |&gt; 
+  pivot_longer(c(none, random), names_to = "baseline_policy", values_to = "baseline") |&gt; 
+  mutate(gain_per = (pftdpw - baseline) / baseline) |&gt;  
+  ggplot(aes(step)) +
+  geom_line(aes(y = gain_per, color = baseline_policy)) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("", labels = scales::label_percent()) +
+  scale_color_discrete("Compared to", labels = plan_labels) +
+  theme(panel.grid.minor.x = element_blank(), legend.position = "top") +
+  guides(linetype = "none") +
+  NULL
+```
+To make this comparison clearer we calculate the percentage difference between our highest performing policies with: (i) the no-evaluation policy and (ii) the random Bayesian policy (which is roughly on par with the random Frequentist policy). Compared to the policy of never re-evaluating a program once it is selected for implementation, we observe average accumulated welfare for the Bayesian evaluate-second-best and the PFT-DPW offline that is more than 20% higher after four episode steps and passing 30% after seven steps. Compared the Frequentist policies (evaluate-second-best and random) the highest performers are around 20% better after five steps. 
+
+
+quarto-executable-code-5450563D
+
+```r
+#| label: fig-step1-returns
+#| fig-cap: "The distribution of accumulated utility gains at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
+#| fig-cap-location: bottom
+#| fig-width: 4
+#| fig-height: 2
+#| column: margin 
+
+vn_util_diff |&gt;
+  filter(step == 1, accum, discounted, fct_match(plan_type, c("best", "random", "freq")), fct_match(reward_type, "ex_post")) |&gt; 
+  ggplot(aes(y = plan_type)) +
+  #tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
+  tidybayes::stat_dist_halfeye(aes(x = reward_diff), alpha = 0.5, .width = c(0.5, 0.8)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_y_discrete(
+    "", 
+    labels = c("best" = "Best", "freq" = "Frequentist", random = "Random")
+  ) +
+  scale_x_continuous("Accumulated Utility Gain") +
+  #labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
+  #facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  coord_cartesian(xlim = c(-0.75, 0.75)) +
+  NULL
+```
+
+# Conclusion
+
+
+quarto-executable-code-5450563D
+
+```r
+#| eval: false
+
+test_data &lt;- julia_eval("test_data")
+
+library(cmdstanr)
+library(posterior)
+
+sim_model &lt;-cmdstan_model("../FundingPOMDPs.jl/stan/sim_model.stan")
+
+test_stan_data &lt;- lst(
+  fit = TRUE, sim = FALSE, sim_forward = FALSE,
+  n_control_sim = 0,
+  n_treated_sim = 0,
+  n_study = 1,
+  study_size = 50,
+  y_control = test_data |&gt; filter(!t) |&gt; pull(y),
+  y_treated = test_data |&gt; filter(t) |&gt; pull(y),
+ 
+  sigma_eta_inv_gamma_priors = TRUE, 
+  mu_sd = 1,
+  tau_mean = 0,
+  tau_sd = 0.5,
+  sigma_sd = 0,
+  eta_sd = c(0, 0, 0),
+  sigma_alpha = 18.5,
+  sigma_beta = 30,
+  eta_alpha = 26.4,
+  eta_beta = 20
+)
+
+fit &lt;- sim_model$sample(test_stan_data, parallel_chains = 4)
+
+dr &lt;- as_draws_rvars(fit)
+```</code></pre>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+</body></html>
