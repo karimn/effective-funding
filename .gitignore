@@ -26,8 +26,6 @@ Manifest.toml
 temp-data/
 .Rproj.user
 
-effective-funding_files/
-
 renv/
 
 quarto/
@@ -35,7 +33,5 @@ quarto/
 .Rhistory
 
 .vscode/
-
-diagnose_files/
 
 /.quarto/
