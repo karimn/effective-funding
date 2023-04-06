@@ -236,7 +236,7 @@ R(a, \boldsymbol{\theta}) &amp;= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k
 \tag{1}\]</span></span></p><div class="no-row-height column-margin column-container"><span class="">Let the states of all the programs be <span class="math inline">\(\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}\)</span>.</span><span class="">In this simulation study we set the discount rate to <span class="math inline">\(\gamma = 0.95\)</span>.</span></div></div>
 <p>where <span class="math inline">\(o \in \mathcal{O}\)</span> is the data collected based on the evaluation action for a particular program, and using it we update <span class="math inline">\(b_{t-1}\)</span> to <span class="math inline">\(b_{t}\)</span>.</p>
 <div class="page-columns page-full"><p>So given the current belief <span class="math inline">\(b_t\)</span> and the policy <span class="math inline">\(\pi\)</span>, the agent estimates both the immediate reward and future discounted rewards – given an updated belief <span class="math inline">\(b_{t}\)</span> continguent on the data collected <span class="math inline">\(o\)</span> – and so forth recursively. Based on this the accumulated returns would be <span class="math display">\[
-G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
 \]</span> where <span class="math inline">\(T\)</span> is the terminal step.</p><div class="no-row-height column-margin column-container"><span class="">In this study, we set <span class="math inline">\(T = 15\)</span>.</span></div></div>
 <div class="page-columns page-full"><p>Unlike a typical MDP the agent does not receive the actual realized reward, but must estimate it conditional on beliefs; program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder’s problem: while in a MAB we would normally observed a reward for the selected arm, or some noisy version of it, in the funder’s environment, we observe an estimate of rewards for the evaluated program only – all other rewards are inferred.</p><div class="no-row-height column-margin column-container"><span class="">Also different from a MAB, we receive a reward from every program, or rather the population it targets.</span></div></div>
 </section>
@@ -783,7 +783,7 @@ where $o \in \mathcal{O}$ is the data collected based on the evaluation action f
 
 So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
 $$
-G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
 $$
 where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
 

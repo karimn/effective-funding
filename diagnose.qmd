@@ -240,7 +240,7 @@ where $o \in \mathcal{O}$ is the data collected based on the evaluation action f
 
 So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
 $$
-G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
 $$
 where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
 
