@@ -8,7 +8,7 @@
 
 <meta name="author" content="Karim Naguib">
 
-<title>The Funder’s Sequential Problem [Work in Progress]</title>
+<title>The Funder’s Meta-Problem [Work in Progress]</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -110,7 +110,7 @@ div.csl-indent {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<div class="quarto-title-block"><div><h1 class="title">The Funder’s Sequential Problem [Work in Progress]</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
+<div class="quarto-title-block"><div><h1 class="title">The Funder’s Meta-Problem [Work in Progress]</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
 </div>
 
 
@@ -140,10 +140,20 @@ div.csl-indent {
 <div class="cell" data-hash="diagnose_cache/html/load-sim-data_af2127eb6648477bd23494c3c2c64bdc">
 
 </div>
-<section id="introduction" class="level1" data-number="1">
+<section id="introduction" class="level1 page-columns page-full" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
-<p>The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.</p>
-<p>This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.</p>
+<p>The objective of this simulation study is to analyze the sequential decision problem faced by organizations that evaluate and fund charities through the lens of Effective Altruism – to maximize the positive impact of donations on the world. Specifically, this study aims to compare different decision-making policies for:</p>
+<ol type="i">
+<li>Selecting programs to fund from a list of programs whose effectiveness is partially observable.</li>
+<li>Choosing programs to re-evaluate, and so incrementally improving (i).</li>
+</ol>
+<p>I model this as a sequence of decisions that need to be made at discrete intervals given a finite set of programs with uncertain impact upon a set of populations. Given some beliefs about the counterfactual outcomes of these programs for their targeted populations, the funder selects the optimal programs to implement and then decides what data to collect to update these beliefs, which in turn will be utilized at the next decision point.</p>
+<div class="page-columns page-full"><p>I intentionally keep the environment and the problem as simple as possible to keep it tractable. The funder’s problem is treated as a bandit problem but without the restriction of only being able to evaluation implemented programs; I assume that each program targets a particular population without any kind of overlap; the cost of implementation is held fixed and equal for all programs; no new programs enter the problem over time; why the state of each program varies over time, it is drawn from a hierarchical and stationary program hyperstate.</p><div class="no-row-height column-margin column-container"><span class="">Follow-up studies will iteratively revisit these assumptions.</span><span class=""><em>State</em> here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observed data when a program is evaluated.</span></div></div>
+<p>While the optimal method to select a program for implementation is a probabilistic one, taking account of the distribution of counterfactual quantities and any available prior information, I also consider the commonly used null hypothesis significance testing (NHST) approach.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> My purpose is not to compare the probabilistic and the NHST decision rules, but rather my focus is on the sequential nature of these decisions in the presence of heterogeneity in program effectiveness. I want to examine the potential to improve welfare by improving the planning scheme employed to select programs for re-evaluation. This is what I refer to as the <em>meta-problem</em>.</p>
+<p>I am not trying to identify the optimal policy, only to consider the possibility of welfare improvement using alternative policies to what is conventionally used, keeping in mind that I am caricaturing those policies in service of tractability, ignoring some of their complexities and context specific adjustments and heuristics that expert decision-makers introduce. Nevertheless, I believe this study does capture the essence of how conventionally used policies underperform.</p>
+<div class="page-columns page-full"><p>Specifically, the policies that I want to show the limitations of are: (a) never re-evaluating programs and basing decisions solely on initial evaluations, (b) re-evaluating programs randomly, and (c) using NHST in a simple heuristic policy. Comparing those against policies using a POMDP algorithm and a simple heuristic policy using a Bayesian hierarchical model. I find that the alternative policies are able to increase accumulated discounted utility by at least 20% after a few steps.</p><div class="no-row-height column-margin column-container"><span class="">POMDPs are Partially Observable Markov Decision Processes.</span></div></div>
+<p>It is also worth mentioning that while the setup of the implementation-evaluation problem is inspired by the problem funding organizations of international development and global health charities, this setup is applicable to the broader decision problems of Effective Altruism.</p>
+<!-- Explain how the time hierarchy is similar to the context one. -->
 </section>
 <section id="the-environment" class="level1 page-columns page-full" data-number="2">
 <h1 data-number="2"><span class="header-section-number">2</span> The Environment</h1>
@@ -238,7 +248,7 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 <li><em>Random evaluation,</em> in which, at every <span class="math inline">\(t\)</span>, we randomly select one of the <span class="math inline">\(K\)</span> programs to be evaluated.</li>
 <li><em>Evaluate second-best,</em> in which, at every <span class="math inline">\(t\)</span>, we select the program that has the second highest estimated reward for evaluation.<br>
 </li>
-<li><em>Particle Filter Tree with Progressive Depth Widening (PFT-DPW),</em> in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate <span class="citation" data-cites="Sunberg2018">(<a href="#ref-Sunberg2018" role="doc-biblioref">Sunberg and Kochenderfer 2018</a>)</span>.</li>
+<li><em>Particle Filter Tree with Progressive Depth Widening (PFT-DPW),</em> in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate <span class="citation" data-cites="Sunberg2018">(<a href="#ref-Sunberg2018" role="doc-biblioref">Sunberg and Kochenderfer 2018</a>)</span>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></li>
 </ol>
 <p>For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a <em>particle filter</em> to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories.</p>
 <div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-actions_ab0504d1f8462f8dec2798cbdb2c4fdc">
@@ -259,7 +269,7 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 </section>
 <section id="results" class="level1 page-columns page-full" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> Results</h1>
-<div class="page-columns page-full"><p>This simulation experiment runs <span class="math inline">\(S = 270\)</span> episodes.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> For each one, we draw the <span class="math inline">\(K\)</span> hyperstates from the prior, <span class="math inline">\(\boldsymbol{\theta}_s\sim\boldsymbol{\xi}\)</span>, then for each <span class="math inline">\(1\leq t \leq T\)</span>, we draw the states, <span class="math inline">\(\boldsymbol{\theta}_{st}\sim\boldsymbol{\theta}_s\)</span>. We then run each of our policies through this episode, deciding on which programs to implement and which are to be evaluated to update beliefs, <span class="math inline">\(b_{st}\)</span>. That means we observe the trajectory of <span class="math inline">\((b_{s,0}, a_{s,1}, o_{s,1}, b_{s,1}, a_{s,2}, o_{s,2}, b_{s,2},\ldots)\)</span> for each policy given the same states and hyperstates.</p><div class="no-row-height column-margin column-container"><span class="">We actually solve <a href="#eq-meta-problem">Equation&nbsp;2</a> as <span class="math display">\[
+<div class="page-columns page-full"><p>This simulation experiment runs <span class="math inline">\(S = 270\)</span> episodes.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> For each one, we draw the <span class="math inline">\(K\)</span> hyperstates from the prior, <span class="math inline">\(\boldsymbol{\theta}_s\sim\boldsymbol{\xi}\)</span>, then for each <span class="math inline">\(1\leq t \leq T\)</span>, we draw the states, <span class="math inline">\(\boldsymbol{\theta}_{st}\sim\boldsymbol{\theta}_s\)</span>. We then run each of our policies through this episode, deciding on which programs to implement and which are to be evaluated to update beliefs, <span class="math inline">\(b_{st}\)</span>. That means we observe the trajectory of <span class="math inline">\((b_{s,0}, a_{s,1}, o_{s,1}, b_{s,1}, a_{s,2}, o_{s,2}, b_{s,2},\ldots)\)</span> for each policy given the same states and hyperstates.</p><div class="no-row-height column-margin column-container"><span class="">We actually solve <a href="#eq-meta-problem">Equation&nbsp;2</a> as <span class="math display">\[
 \max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}).
 \]</span></span></div></div>
 <p>To evaluate the policies’ performance we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In <a href="#fig-returns-compare">Figure&nbsp;5</a>, we observe how this difference evolves over the <span class="math inline">\(T\)</span> steps of the episode: we see that the best performers are the PFT-DPW and Bayesian evaluate-second-best policies. We observe lower performance from the two Frequentist policies and the random Bayesian policy. Lastly, the worst performer is the no-evaluation policy where we make decision based on <span class="math inline">\(b_0\)</span> only.</p>
@@ -297,7 +307,7 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 </section>
 <section id="conclusion" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> Conclusion</h1>
-<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-18_55dd99a02d8cbe19811b9956cebaaab9">
+<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-18_8314620dd367a120b953506aece682f1">
 
 </div>
 
@@ -309,6 +319,9 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-Haber2022" class="csl-entry" role="doc-biblioentry">
+Haber, Noah A. 2022. <span>“<span class="nocase">GiveWell’s Uncertainty Problem</span>.”</span> <a href="https://www.metacausal.com/givewells-uncertainty-problem/">https://www.metacausal.com/givewells-uncertainty-problem/</a>.
+</div>
 <div id="ref-Kochenderfer2022" class="csl-entry" role="doc-biblioentry">
 Kochenderfer, Mykel J., Tim A. Wheeler, and Kyle H. Wray. 2022. <em><span class="nocase">Algorithms for decision making</span></em>. <a href="https://algorithmsbook.com/files/dm.pdf">https://algorithmsbook.com/files/dm.pdf</a>.
 </div>
@@ -321,7 +334,9 @@ Sunberg, Zachary N., and Mykel J. Kochenderfer. 2018. <span>“<span class="noca
 </div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
-<li id="fn1"><p>Why not more? Each simulated episode can take a significant amount of time, particularly when using the PFT-DPW policy which runs 1,000 iterations at every step before selecting a program for evaluation. Even simpler policies, such as the random policies, take some time when we use a Bayesian model to update beliefs; we fit all the observed data for a program at every new evaluation.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1"><p>Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in <a href="http://givewell.com">GiveWell’s</a> <a href="https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/">Change Our Minds Context</a> by <span class="citation" data-cites="Haber2022">Haber (<a href="#ref-Haber2022" role="doc-biblioref">2022</a>)</span> showed that threshold-based method, like NHST, suffers from bias caused by the winner’s curse phenomenon.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>The PFT-DPW algorithm is a hybrid approach for solving partially observable Markov decision processes (POMDPs) that combines particle filtering and tree-based search. It represents belief states using a tree data structure and uses double progressive widening to selectively expand promising regions of the belief state space. Particle weights are used to represent the probabilities of different belief states, and these weights are updated through the particle filtering and tree expansion process. Actions are selected based on estimated belief state values, and the tree is pruned to keep it computationally efficient.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Why not more? Each simulated episode can take a significant amount of time, particularly when using the PFT-DPW policy which runs 1,000 iterations at every step before selecting a program for evaluation. Even simpler policies, such as the random policies, take some time when we use a Bayesian model to update beliefs; we fit all the observed data for a program at every new evaluation.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -509,7 +524,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
 <pre class="markdown" data-shortcodes="false"><code>---
-title: The Funder's Sequential Problem [Work in Progress]
+title: The Funder's Meta-Problem [Work in Progress]
 author: 
   - name: Karim Naguib
     email: karimn2.0@gmail.com
@@ -602,9 +617,27 @@ all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls")
 
 # Introduction
 
-The aim of this study is to examine the challenges involved in selecting which interventions or programs to fund, and to propose ways to address them. Two main challenges stand out. The first is the problem of uncertainty regarding the true effect of an intervention on the welfare of a population. The second challenge is uncertainty about the heterogeneity of this effect across different contexts, including time and geography. While we may have some data from a specific context to inform our decision-making, we cannot simply assume that the same inference can be applied to other contexts.
+The objective of this simulation study is to analyze the sequential decision problem faced by organizations that evaluate and fund charities through the lens of Effective Altruism -- to maximize the positive impact of donations on the world. Specifically, this study aims to compare different decision-making policies for:
 
-This is a simulation study in which I first construct a probabilistic model representing the environment in which the agent (funder) must make decisions on which interventions to fund and which to re-evaluate.
+(i) Selecting programs to fund from a list of programs whose effectiveness is partially observable.
+(ii) Choosing programs to re-evaluate, and so incrementally improving (i).
+
+I model this as a sequence of decisions that need to be made at discrete intervals given a finite set of programs with uncertain impact upon a set of populations. Given some beliefs about the counterfactual outcomes of these programs for their targeted populations, the funder selects the optimal programs to implement and then decides what data to collect to update these beliefs, which in turn will be utilized at the next decision point. 
+
+I intentionally keep the environment and the problem as simple as possible to keep it tractable.[Follow-up studies will iteratively revisit these assumptions.]{.aside} The funder's problem is treated as a bandit problem but without the restriction of only being able to evaluation implemented programs; I assume that each program targets a particular population without any kind of overlap; the cost of implementation is held fixed and equal for all programs; no new programs enter the problem over time; why the state of each program varies over time, it is drawn from a hierarchical and stationary program hyperstate.[_State_ here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observed data when a program is evaluated.]{.aside} 
+
+While the optimal method to select a program for implementation is a probabilistic one, taking account of the distribution of counterfactual quantities and any available prior information, I also consider the commonly used null hypothesis significance testing (NHST) approach.[^bayes-vs-freq] My purpose is not to compare the probabilistic and the NHST decision rules, but rather my focus is on the sequential nature of these decisions in the presence of heterogeneity in program effectiveness. I want to examine the potential to improve welfare by improving the planning scheme employed to select programs for re-evaluation. This is what I refer to as the _meta-problem_.
+
+I am not trying to identify the optimal policy, only to consider the possibility of welfare improvement using alternative policies to what is conventionally used, keeping in mind that I am caricaturing those policies in service of tractability, ignoring some of their complexities and context specific adjustments and heuristics that expert decision-makers introduce. Nevertheless, I believe this study does capture the essence of how conventionally used policies underperform. 
+
+Specifically, the policies that I want to show the limitations of are: (a) never re-evaluating programs and basing decisions solely on initial evaluations, (b) re-evaluating programs randomly, and (c) using NHST in a simple heuristic policy. Comparing those against policies using a POMDP[POMDPs are Partially Observable Markov Decision Processes.]{.aside} algorithm and a simple heuristic policy using a Bayesian hierarchical model. I find that the alternative policies are able to increase accumulated discounted utility by at least 20% after a few steps.
+
+It is also worth mentioning that while the setup of the implementation-evaluation problem is inspired by the problem funding organizations of international development and global health charities, this setup is applicable to the broader decision problems of Effective Altruism. 
+
+&lt;!-- Explain how the time hierarchy is similar to the context one. --&gt;
+
+[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon.
+
 
 # The Environment
 
@@ -764,7 +797,7 @@ Now, we take up the question of policies.
 1. _No evaluation,_ in which we never evaluate any of the programs and only use our initial beliefs, $b_0$, to decide which program to implement.
 2. _Random evaluation,_ in which, at every $t$, we randomly select one of the $K$ programs to be evaluated.
 3. _Evaluate second-best,_ in which, at every $t$, we select the program that has the second highest estimated reward for evaluation.  
-4. _Particle Filter Tree with Progressive Depth Widening (PFT-DPW),_ in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate [@Sunberg2018].
+4. _Particle Filter Tree with Progressive Depth Widening (PFT-DPW),_ in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate [@Sunberg2018].[^pftdpw]
 
 For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a _particle filter_ to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories. 
 
@@ -839,7 +872,8 @@ $$
 \max_{\pi \in \Pi} W_T(\pi) = E_{\boldsymbol{\theta}\sim\boldsymbol{\xi}}\left\{ \sum_{t=1}^T\gamma^{t-1}E_{\boldsymbol{\theta}_t\sim\boldsymbol{\theta}}[R(\pi(b_t), \boldsymbol{\theta}_t)] \right\}. 
 $${#eq-meta-problem}[Notice how this differs from the funder's problem in @eq-problem: here we assume we know the hyperstates and states which we draw from the prior, $\boldsymbol{\xi}$, not from beliefs, $b$.]{.aside}
 
-  
+[^pftdpw]: The PFT-DPW algorithm is a hybrid approach for solving partially observable Markov decision processes (POMDPs) that combines particle filtering and tree-based search. It represents belief states using a tree data structure and uses double progressive widening to selectively expand promising regions of the belief state space. Particle weights are used to represent the probabilities of different belief states, and these weights are updated through the particle filtering and tree expansion process. Actions are selected based on estimated belief state values, and the tree is pruned to keep it computationally efficient.   
+ 
 # Results
 
 quarto-executable-code-5450563D
@@ -995,6 +1029,9 @@ vn_util_diff |&gt;
 # Conclusion
 
 
+
+
+
 quarto-executable-code-5450563D
 
 ```r
@@ -1031,6 +1068,7 @@ test_stan_data &lt;- lst(
 fit &lt;- sim_model$sample(test_stan_data, parallel_chains = 4)
 
 dr &lt;- as_draws_rvars(fit)
+
 ```</code></pre>
 </div></div></div></div></div>
 </div> <!-- /content -->
