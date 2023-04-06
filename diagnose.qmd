@@ -16,7 +16,6 @@ execute:
 knitr:
   opts_chunk: 
     cache: true 
-bibliography: /home/karim/Documents/library.bib
 ---
 
 ```{r}
