@@ -8,7 +8,7 @@ format:
   html:
     number-sections: true
     code-tools: true
-    fig-width: 9 
+    fig-width: 8 
     toc: true
     toc-location: left
 execute: 
@@ -441,10 +441,9 @@ vn_util_diff |>
 ```
 To make this comparison clearer we calculate the percentage difference between our highest performing policies with: (i) the no-evaluation policy and (ii) the random Bayesian policy (which is roughly on par with the random Frequentist policy). Compared to the policy of never re-evaluating a program once it is selected for implementation, we observe average accumulated welfare for the Bayesian evaluate-second-best and the PFT-DPW offline that is more than 20% higher after four episode steps and passing 30% after seven steps. Compared the Frequentist policies (evaluate-second-best and random) the highest performers are around 20% better after five steps. 
 
-
 ```{r}
 #| label: fig-step1-returns
-#| fig-cap: "The distribution of accumulated utility gains at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
+#| fig-cap: "The distribution of utility gains at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
 #| fig-cap-location: bottom
 #| fig-width: 4
 #| fig-height: 2

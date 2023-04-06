@@ -137,7 +137,7 @@ div.csl-indent {
 
 </header>
 
-<div class="cell" data-hash="diagnose_cache/html/load-sim-data_af2127eb6648477bd23494c3c2c64bdc">
+<div class="cell" data-hash="diagnose_cache/html/load-sim-data_e0beba43087c07d63126d5d9bdbac01b">
 
 </div>
 <section id="introduction" class="level1 page-columns page-full" data-number="1">
@@ -179,11 +179,11 @@ div.csl-indent {
 \end{align*}
 \]</span> where <span class="math inline">\(\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})\)</span> are the hyperparameters for the environment. Thus we are modeling the counterfactual outcomes of program implementation as a hierarchical Bayesian model. This means that while each program has a fixed average baseline outcome, <span class="math inline">\(\mu_k\)</span>, and average treatment effect, <span class="math inline">\(\tau_k\)</span>, at every step normally distributed shocks, with mean zero, alter the realized averages. </p><div class="no-row-height column-margin column-container"><span class="">With some abuse of notation, I will write <span class="math inline">\(\boldsymbol{\theta_{kt}\sim\theta_k}\)</span> and <span class="math inline">\(\boldsymbol{\theta_k\sim\boldsymbol{\xi}}\)</span>.</span></div></div>
 <div class="page-columns page-full"><p>In this simple environment this hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I’m making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.</p><div class="no-row-height column-margin column-container"><span class="">Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.</span></div></div>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-states-example_da7afbdd91c58067086060057daa1f12">
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-states-example_ee2a21eea6d22058e580bb725f80c377">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-states-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-states-example-1.png" class="img-fluid figure-img" width="864"></p>
+<p><img src="diagnose_files/figure-html/fig-states-example-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;1: Population outcomes over time for 10 example programs. Ribbons represent the mean outcome <span class="math inline">\(\pm \sigma_p\)</span>.</figcaption><p></p>
 </figure>
 </div>
@@ -204,11 +204,11 @@ div.csl-indent {
 U(y;\alpha) = 1 - e^{- \alpha y},
 \]</span> where <span class="math inline">\(\alpha\)</span> represents the degree of risk aversion. Typically, we would want to also take into consideration <em>cost-effectiveness</em>, however, in this formulation I assume that all programs have a unit cost.</p>
 <div class="page-columns page-full"><p>If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utility. For example, given some means and standard deviations of outcomes over time, <span class="math inline">\(\mu_{kt} + z\cdot \tau_{kt}\)</span> and <span class="math inline">\(\sigma_k\)</span>, respectively, the expected utility would be as in <a href="#fig-state-util-example">Figure&nbsp;3</a>. Since the agent also never observes the true state, this uncertainty also would have reductive affect on expected utility (if using a risk averse utility function).</p><div class="no-row-height column-margin column-container"><span class="">We focus on statistical uncertainty, ignoring moral uncertainty.</span></div></div>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-state-util-example_d4756303d9ff6c993e9d11664abadc94">
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-state-util-example_627ccd2afa5dda34ec5e6852095643ac">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-state-util-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-state-util-example-1.png" class="img-fluid figure-img" width="864"></p>
+<p><img src="diagnose_files/figure-html/fig-state-util-example-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;3: Population expected utility over time for 10 example programs. <span class="math inline">\(E_{Y_{kt}\sim\boldsymbol{\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\alpha(\mu_{kt} + z\cdot\tau_{kt}) + \alpha^2 \sigma_k^2/2}\)</span>.</figcaption><p></p>
 </figure>
 </div>
@@ -251,11 +251,11 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 <li><em>Particle Filter Tree with Progressive Depth Widening (PFT-DPW),</em> in which we use an offline Monte Carlo Tree Search (MCTS) policy variant to select the program to evaluate <span class="citation" data-cites="Sunberg2018">(<a href="#ref-Sunberg2018" role="doc-biblioref">Sunberg and Kochenderfer 2018</a>)</span>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></li>
 </ol>
 <p>For all the policies experimented with, we maintain some kind of belief of the expected utility of implementation counterfactuals. For all of them we use a hierarchical Bayesian posterior to represent our updated beliefs. For the PFT-DPW policy we use a <em>particle filter</em> to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-actions_ab0504d1f8462f8dec2798cbdb2c4fdc">
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-actions_42a9a347427d8b5d22a24068ec22a6c8">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-actions" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-actions-1.png" class="img-fluid figure-img" width="864"></p>
+<p><img src="diagnose_files/figure-html/fig-actions-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;4: Evaluate and implement actions over <span class="math inline">\(K = 15\)</span> steps for five example episodes (rows). For each each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of <em>ex ante</em> optimality.</figcaption><p></p>
 </figure>
 </div>
@@ -273,11 +273,11 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 \max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}).
 \]</span></span></div></div>
 <p>To evaluate the policies’ performance we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In <a href="#fig-returns-compare">Figure&nbsp;5</a>, we observe how this difference evolves over the <span class="math inline">\(T\)</span> steps of the episode: we see that the best performers are the PFT-DPW and Bayesian evaluate-second-best policies. We observe lower performance from the two Frequentist policies and the random Bayesian policy. Lastly, the worst performer is the no-evaluation policy where we make decision based on <span class="math inline">\(b_0\)</span> only.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-returns-compare_89f41d723055ef4766f7ec64d451e028">
+<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-returns-compare_93fcec54606543bfe76cdb4eb698bc15">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-returns-compare" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-returns-compare-1.png" class="img-fluid figure-img" width="864"></p>
+<p><img src="diagnose_files/figure-html/fig-returns-compare-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;5: Mean accumulated discounted utility gains, compared to a no program implementation policy, <span class="math display">\[\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi^\emptyset),\]</span> where <span class="math inline">\(\pi^\emptyset(b) = (0,0),\forall b.\)</span></figcaption><p></p>
 </figure>
 </div>
@@ -294,20 +294,20 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{1-r}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 </div>
 </div></div></div>
 <p>To make this comparison clearer we calculate the percentage difference between our highest performing policies with: (i) the no-evaluation policy and (ii) the random Bayesian policy (which is roughly on par with the random Frequentist policy). Compared to the policy of never re-evaluating a program once it is selected for implementation, we observe average accumulated welfare for the Bayesian evaluate-second-best and the PFT-DPW offline that is more than 20% higher after four episode steps and passing 30% after seven steps. Compared the Frequentist policies (evaluate-second-best and random) the highest performers are around 20% better after five steps.</p>
-<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-step1-returns_2b21fc2fe322518cf39adf16744c3c0a">
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-step1-returns_b047187bc9d69665b67f4910e98dcb08">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-step1-returns" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="diagnose_files/figure-html/fig-step1-returns-1.png" class="img-fluid figure-img" width="384"></p>
-<p></p><figcaption class="figure-caption">Figure&nbsp;7: The distribution of accumulated utility gains at <span class="math inline">\(t = 1\)</span>, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;7: The distribution of utility gains at <span class="math inline">\(t = 1\)</span>, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy.</figcaption><p></p>
 </figure>
 </div>
 </div></div></div>
 </section>
 <section id="conclusion" class="level1" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> Conclusion</h1>
-<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-18_8314620dd367a120b953506aece682f1">
+<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-18_e9f5efd90d66d31208a70f8b545a38c3">
 
 </div>
 
@@ -533,7 +533,7 @@ format:
   html:
     number-sections: true
     code-tools: true
-    fig-width: 9 
+    fig-width: 8 
     toc: true
     toc-location: left
 execute: 
@@ -998,12 +998,11 @@ vn_util_diff |&gt;
 ```
 To make this comparison clearer we calculate the percentage difference between our highest performing policies with: (i) the no-evaluation policy and (ii) the random Bayesian policy (which is roughly on par with the random Frequentist policy). Compared to the policy of never re-evaluating a program once it is selected for implementation, we observe average accumulated welfare for the Bayesian evaluate-second-best and the PFT-DPW offline that is more than 20% higher after four episode steps and passing 30% after seven steps. Compared the Frequentist policies (evaluate-second-best and random) the highest performers are around 20% better after five steps. 
 
-
 quarto-executable-code-5450563D
 
 ```r
 #| label: fig-step1-returns
-#| fig-cap: "The distribution of accumulated utility gains at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
+#| fig-cap: "The distribution of utility gains at $t = 1$, comparing the best possible program choice, the Frequentist policy, and the Bayesian policy."
 #| fig-cap-location: bottom
 #| fig-width: 4
 #| fig-height: 2
