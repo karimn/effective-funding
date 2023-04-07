@@ -100,16 +100,19 @@ Thus the problem is modeled as a bandit problem, but without the restriction of 
 
 While the optimal method to select a program for implementation is a probabilistic one, taking into account the distribution of counterfactual quantities and any available prior information, I also consider the commonly used null hypothesis significance testing (NHST) approach.[^bayes-vs-freq] However, my focus is not on comparing the probabilistic and NHST decision rules, but rather on the sequential nature of these decisions in the presence of heterogeneity in program effectiveness. I aim to examine the potential to improve welfare by enhancing the planning scheme used to select programs for re-evaluation, which I refer to as the _meta-problem_.
 
+
 <!-- Explain how the time hierarchy is similar to the context one. -->
 
-[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon.
+[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon. A big difference between what I am investigating here and Haber's work is that I am looking beyond the one-shot accept/reject decision of programs.
 
 
 # The Environment
 
-As previously mentioned, I'm going to use a simplified environment while trying to stay faithful to the most pertinent aspects of the real-world environment. The funder is assumed to be confronted with a set of programs, $\mathcal{K}$, and has to decide which program(s) to fund and which to re-evaluate.[$\mathcal{K} = \{1,\ldots,K\}$. In this study, $K = 10$.]{.aside} They will have to repeatedly revisit this decision over a number of _steps_.[In a health or development program, re-evaluation means collecting data from a randomized trial.]{.aside}
+As mentioned previously, in this study, a simplified environment is utilized while striving to capture the most relevant aspects of the real-world context. The funder is assumed to be faced with a set of programs, denoted as $\mathcal{K}$, and must decide which program(s) to fund and which program(s) to re-evaluate.[$\mathcal{K} = \{1,\ldots,K\}$. In this study, $K = 10$.]{.aside} This decision needs to be made repeatedly over a series of steps.
 
-A good place to start is to model the environment as a multi-armed bandit (MAB). Each program/intervention is represented by such a bandit with a stochastic causal model: at every step in the sequential environment a new *state* -- drawn from a *hyperstate* -- determines the outcomes of the population targeted.[This is a broad simplification. In reality, we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.]{.aside} 
+The environment is modeled as a multi-armed bandit (MAB) framework, where each program or intervention is represented as a bandit with a stochastic causal model. In the sequential environment, at each step, a new _state_ is drawn from a _hyperstate_ that determines the outcomes of the targeted population. This hyperstate is used to simulate the underlying uncertainty and variability of real-world interventions, capturing the inherent uncertainties in program outcomes and their effects on the population.[This is a broad simplification. In reality, we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and different populations could be simultaneously targeted by a program.]{.aside}
+
+By employing a MAB framework and incorporating hyperstates, this study aims to capture the dynamic nature of decision-making in funding programs, where the funder must adapt and update their choices over time based on changing states and outcomes. This approach allows for exploring different decision-making policies and their impact on program selection and re-evaluation, in order to optimize resource allocation and improve the effectiveness of charitable funding decisions. 
 
 For each program $k$, we model the data generating process for each individual's outcome at step $t$ as,
 
@@ -121,7 +124,7 @@ $$
   \tau_{kt} &\sim \mathtt{Normal}(\tau_k, \eta^\tau_k)
 \end{align*}
 $$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
-where $z$ is a binary variable indicating whether a program is implemented or not, which means $\tau_{kt}$ is average treatment effect. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
+where $z$ is a binary variable indicating whether a program is implemented or not, which means $\tau_{kt}$ is the average treatment effect. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
 
 On the other hand, the hyperstate for each program, $\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
 $$
@@ -133,9 +136,9 @@ $$
   \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
 \end{align*}
 $$ 
-where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters for the environment. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step, normally distributed shocks, with mean zero, alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters of the environment. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step, normally distributed shocks alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
 
-In this simple environment the hierarchical structure represents the heterogeneity of program effectiveness over time, emphasizing the limitations of a single evaluation of a program at a particular point in time. I am making the simplifying assumption that this variation is purely an oscillation without any trends. Furthermore, agents should also be concerned about variations in effectiveness when programs are implemented in different contexts, but we ignore that in this environment assuming the time variation captures the general problem of heterogeneity over time and context.[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside} Since states vary randomly and independently, the objective of the funder is to learn about the hyperstate rather than the next realized state.[Future iterations of this model could introduce some correlation between states over time.]{.aside} 
+In this environment, the hierarchical structure of the hyperstate represents the inherent heterogeneity of program effectiveness over time, highlighting the limitations of relying solely on a single evaluation of a program at a particular point in time. The assumption is made that this variation in effectiveness follows a purely oscillatory pattern without any trends. While funders should also be concerned about variations in effectiveness when programs are implemented in different contexts[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}, this aspect is ignored in this simplified environment, assuming that the time variation captures the general problem of heterogeneity over time and context. As the states in the hyperstate vary randomly and independently, the objective of the funder is to learn about the underlying hyperstate, rather than predicting the next realized state.[Future iterations of this model could introduce some correlation between states over time.]{.aside} 
 
 ```{julia}
 #| label: states-example-data
@@ -166,7 +169,7 @@ ep1_states |>
   theme(legend.position = "top")
 ```
 
-The funder is never aware of the true state of the world --- the true counterfactual model of all programs' effectiveness --- but they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the funder has an initial observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent's prior beliefs.
+The funder is never aware of the true state of the world --- the true counterfactual model of all programs' effectiveness --- but they are able to evaluate a program by collecting data and updating their beliefs. I assume that the funder has an initial observation for each program under consideration. This could be data from an earlier experiment or could represent the funder's or other experts' prior beliefs.
 
 ```{r}
 #| label: fig-utility-fig
@@ -188,9 +191,9 @@ crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |>
   coord_cartesian(ylim = c(-2, 0.5)) +
   NULL
 ``` 
-Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a _utility function_. The program outcomes mentioned above are in terms of an abstract quantity (e.g., income). A utility function means that there is a possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility (even if has relatively lower cost-effectiveness) or to implement programs with lower uncertainty. The utility function used is the _exponential utility_ function.
+In the evaluation of which program to implement, the agent is assumed to be maximizing welfare, which is measured using a utility function. The program outcomes, as mentioned earlier, are represented in terms of an abstract quantity, such as income. By incorporating a utility function, the analysis takes into account the possibility of risk aversion and diminishing marginal utility, recognizing that it may be more optimal to prioritize increasing the utility of individuals with lower baseline utility, even if it has relatively lower cost-effectiveness, or to choose programs with lower uncertainty. The utility function used in this study is the _exponential utility function_.
 
-If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. 
+When there is uncertainty or variability in the outcomes of different programs, it is important to work with expected utilities to account for this variability. For instance, if we have information on the means and standard deviations of outcomes over time, denoted as $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility can be calculated as in @fig-state-util-example. 
 
 ```{r}
 #| label: fig-state-util-example
