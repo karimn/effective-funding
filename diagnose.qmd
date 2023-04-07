@@ -81,10 +81,12 @@ all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls")
 
 # Introduction
 
-The objective of this simulation study is to analyze the sequential decision problem faced by organizations that evaluate and fund charities through the lens of Effective Altruism -- to maximize the positive impact of donations on the world. Specifically, this study aims to compare different decision-making policies for:
+The main goal of this simulation study is to analyze the sequential decision problem encountered by organizations involved in evaluating and funding charities from the perspective of Effective Altruism, which seeks to maximize the positive impact of donations on a global scale. In particular, the study aims to compare different decision-making policies for two key tasks:
 
-(i) Selecting programs to fund from a list of programs whose effectiveness is partially observable.
-(ii) Choosing programs to re-evaluate, and so incrementally improving (i).
+(i) Selecting programs to fund from a list of programs whose effectiveness is only partially observable, taking into account the inherent uncertainties in program outcomes and impact.
+(ii) Determining which programs to re-evaluate in order to incrementally improve the decision-making process for program selection (i), by updating information and adjusting funding allocations accordingly.
+
+By investigating and evaluating various decision-making policies within this framework, the study aims to contribute insights into how organizations can make more informed and effective funding decisions in the realm of Effective Altruism, with the ultimate goal of maximizing positive impact and optimizing resource allocation for charitable purposes.
 
 The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
 
