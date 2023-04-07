@@ -103,7 +103,7 @@ While the optimal method to select a program for implementation is a probabilist
 
 <!-- Explain how the time hierarchy is similar to the context one. -->
 
-[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon. A big difference between what I am investigating here and Haber's work is that I am looking beyond the one-shot accept/reject decision of programs.
+[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon. A big difference between what I am investigating here and Haber's work is that I am looking beyond the one-shot accept/reject decision.
 
 
 # The Environment
@@ -213,20 +213,16 @@ ep1_states |>
 
 # The Problem {#sec-problem}
 
-Now that I described the environment the funder finds themselves in, I will take up the problem they are trying to solve. As described, they are confronted with $K$ programs and they must make two decisions (take two actions)
+Now that the environment in which the funder operates has been described, the problem they are trying to solve can be addressed. The funder is confronted with a set of $K$ programs and must make two decisions, taking two actions:
 
-1. Select one program to fund (i.e., to implement) or none.
-2. Select one program to evaluate or none.
+(i) Select one program to fund (i.e., to implement) or none.
+(ii) Select one program to evaluate or none.
 
-At every $t$, the agent must choose a _(implement, evaluate)_-tuple.
+At every time step $t$, the agent must choose a tuple $(m,v)$ from the action set $$\mathcal{A} = {(m,v): m, v\in \mathcal{K}\cup{0}},$$ where $m$ represents the program to be funded (with $0$ representing no program), and $v$ represents the program to be evaluated (with $0$ representing no evaluation).
 
-$$
-a_{t} \in \mathcal{A} = \{(m,v): m, v\in \mathcal{K}\cup\{0\}\}.
-$$[Let $a^{m}_{kt}$ and $a^v_{kt}$ indicate if $k$ is implemented or evaluated, respectively.]{.aside}
+This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program. Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states, we can reformulate our problem to use the funder's _beliefs_ about parameters of the programs' causal models as the state [@Morales2020;@Kochenderfer2022]. 
 
-This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program.[The _exploration-exploitation_ tradeoff.]{.aside} Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states. However, we can reformulate our problem to use the agent's _beliefs_ about parameters of the programs' causal models [@Morales2020;@Kochenderfer2022]. 
-
-In that case, the problem is now _Markov Decision Process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
+In that case, the problem is now a _Markov decision process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
 $$
 \begin{align*}
 V_\pi(b_{t-1}) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t})\right]p(o\mid\boldsymbol{\theta}, a_t)b_{t-1}(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
@@ -237,13 +233,13 @@ $${#eq-problem}[In this simulation study we set the discount rate to $\gamma = 0
 
 where $o \in \mathcal{O}$ is the data collected based on the evaluation action for a particular program, and using it we update $b_{t-1}$ to $b_{t}$.
 
-So given the current belief $b_t$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
+So given the current belief $b_{t-1}$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
 $$
 G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
 $$
-where $T$ is the terminal step.[In this study, we set $T = 15$.]{.aside}  
+where $T$ is the terminal step.[In this study, I use $T = 15$.]{.aside}  
 
-Unlike a typical MDP the agent does not receive the actual realized reward, but must estimate it conditional on beliefs; program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder's problem: while in a MAB we would normally observed a reward for the selected arm, or some noisy version of it, in the funder's environment, we observe an estimate of rewards for the evaluated program only -- all other rewards are inferred.[Also different from a MAB, we receive a reward from every program, or rather the population it targets.]{.aside} 
+Unlike a typical MDP, the agent in this case does not observe the actual realized reward at each step, but must estimate it conditional on their beliefs. Program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder's problem: while in an MDP, we would normally observe a reward for the selected action, or some noisy version of it, in the funder's environment, all rewards are inferred.[Also different from a MDP, we receive utility from every program, or rather from the population it targets.]{.aside}
 
 # The Plans
 
