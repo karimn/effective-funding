@@ -69,7 +69,7 @@ nprograms <- julia_eval("nprograms")
 discount <- julia_eval("discount")
 
 plan_labels <- c("no impl" = "No Implementation", none = "No Evaluation", random = "Random (Bayesian)", freq = "Random (Frequentist)", evalsecond = "Evaluate Second Best (Bayesian)",
-                 freq_evalsecond = "Evaluate Second Best (Frequentist)", pftdpw = "PFT-DPW", best = "Best")
+                 freq_evalsecond = "Evaluate Second Best (Frequentist)", pftdpw = "PFT-DPW", best = "Hypothetical Best")
 ```
 
 ```{julia}
@@ -175,7 +175,7 @@ The funder is never aware of the true state of the world --- the true counterfac
 #| label: fig-utility-fig
 #| fig-cap: The exponential utility function, $U(y;\alpha) = 1 - e^{- \alpha y},$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
 #| fig-cap-location: bottom
-#| fig-width: 4
+#| fig-width: 3
 #| fig-height: 3
 #| column: margin
 
@@ -414,7 +414,7 @@ vn_util_diff |>
 
 ```{r}
 #| label: fig-returns-percent-compare
-#| fig-width: 4
+#| fig-width: 3
 #| fig-height: 3
 #| fig-cap: Percentage increase in mean accumulated discounted utility gain, $\frac{\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi')}{\widetilde{W}_T(\pi')}.$
 #| fig-cap-location: bottom
@@ -432,42 +432,89 @@ vn_util_diff |>
   scale_x_continuous("Step", breaks = seq(maxstep)) +
   scale_y_continuous("", labels = scales::label_percent()) +
   scale_color_discrete("Compared to", labels = plan_labels) +
-  theme(panel.grid.minor.x = element_blank(), legend.position = "top") +
+  theme(panel.grid.minor.x = element_blank(), legend.position = "top", legend.direction = "vertical") +
   guides(linetype = "none") +
   NULL
 ```
 To provide a clearer comparison, we calculate the percentage difference between the highest performing policies and two baseline policies: (i) the no-evaluation policy, and (ii) the random Bayesian policy (which is roughly on par with the random frequentist policy). When compared to the policy of never re-evaluating a program once it is selected for implementation, we observe that the Bayesian evaluate-second-best and the PFT-DPW offline policies show an average accumulated welfare that is more than 20% higher after four episode steps, and surpasses 30% after seven steps. In comparison to the frequentist policies (evaluate-second-best and random), the highest performing policies show around 20% improvement after five steps.
 
+
+# Conclusion
+
 ```{r}
 #| label: fig-step1-returns
-#| fig-cap: "The distribution of utility gains at $t = 1$, comparing the best possible program choice, the frequentist policy, and the Bayesian policy."
+#| fig-cap: "The distribution of utility gains at $t = 1$, comparing the hypothetical best policy, the frequentist policy, and the Bayesian policy."
 #| fig-cap-location: bottom
-#| fig-width: 4
+#| fig-width: 3
 #| fig-height: 2
 #| column: margin 
 
 vn_util_diff |>
   filter(step == 1, accum, discounted, fct_match(plan_type, c("best", "random", "freq")), fct_match(reward_type, "ex_post")) |> 
-  ggplot(aes(y = plan_type)) +
+  ggplot(aes(x = plan_type)) +
   #tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
-  tidybayes::stat_dist_halfeye(aes(x = reward_diff), alpha = 0.5, .width = c(0.5, 0.8)) +
+  tidybayes::stat_dist_halfeye(aes(y = reward_diff), alpha = 0.25, .width = c(0.5, 0.8)) +
   geom_vline(xintercept = 0, linetype = "dotted") +
-  scale_y_discrete(
+  scale_x_discrete(
     "", 
     labels = c("best" = "Best", "freq" = "Frequentist", random = "Random")
   ) +
-  scale_x_continuous("Accumulated Utility Gain") +
+  scale_y_continuous("") +
   #labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
   #facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
-  coord_cartesian(xlim = c(-0.75, 0.75)) +
+  coord_cartesian(ylim = c(-0.75, 0.75)) +
   NULL
 ```
+In conclusion, through the construction of a simple simulacrum of the problem faced by an Effective Altruism funder and the consideration of planning policies over time, it is evident that there is a significant gap in accumulated welfare between the more naive versions of policies and the more probabilistic and sophisticated policies. This gap becomes more pronounced when we consider the sequential problem, as opposed to the one-shot problem. For instance, in @fig-step1-returns, we can see that there is little difference between a frequentist NHST policy and a probabilistic one in the first step. However, as more steps are taken, differences between the policies become apparent, underscoring the importance of considering the longer-term implications of planning policies.
 
-# Conclusion
+```{r}
+#| label: fig-returns-compare-include-best
+#| fig-width: 3
+#| fig-height: 4
+#| fig-cap: Mean accumulated discounted utility gains, compared to a no program implementation policy.
+#| column: margin
 
+vn_util_diff |>
+  filter(accum, discounted, fct_match(plan_type, c("evalsecond", "best")), fct_match(reward_type, "ex_post")) |> 
+  ggplot(aes(step)) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("Mean Accumulated Utility Gains", breaks = seq(0, 2, 0.2)) +
+  #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
+  scale_color_discrete(
+    "Policy", 
+    labels = plan_labels, 
+    aesthetics = c("color", "fill")
+  ) +
+  # facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  # labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
+  theme(panel.grid.minor.x = element_blank(), legend.position = "top", legend.direction = "vertical") +
+  guides(linetype = "none") +
+  NULL
+```
+Even considering these factors, the gap between our best performing policy and the best possible hypothetical policy remains substantial (as seen in @fig-returns-compare-include-best). This suggests that there is likely more room for improvement in order to approach an optimal approach[^tuning]. Here are some ideas for enhancing this study to better reflect real-world environments and develop more effective policies (in no particular order):
 
+* Introduce varying program costs to consider the question of cost-effectiveness, as the cost of implementing different programs can have a significant impact on decision-making.
+* Explore how the concept of leverage could influence policy decisions, as certain programs may have a greater ability to leverage resources and create broader impact.
+* Allow for different population sizes in the simulation, as population size can affect the scalability and impact of interventions.
+ * Consider the potential for programs to target multiple populations with some correlation, and for populations to support multiple programs with potential complementarity and substitution effects, as this can reflect the complexity and interrelatedness of real-world scenarios.
+* Incorporate non-stationarity into the hyperstates, effectively adding correlation between steps and potentially improving predictions and the need for re-evaluation, as real-world environments are dynamic and evolve over time.
+* Account for potential diminishing treatment effects over time as the control outcome moves closer to the treatment level, as this can affect the long-term effectiveness of interventions.
+* Consider the quality of programs or population compliance and how it may vary over time, as program quality and population behavior can impact outcomes in real-world scenarios.
+* Explore differences in evaluations for implemented programs versus non-implemented ones, as this can introduce potential scale effects and reflect the challenges of transitioning from proof-of-concept studies to scaled programs.
+* Restrict the implementation action choices to prevent rapid changes between programs due to fixed costs, as it may not always be feasible to shut down and resume programs in quick succession. For example, disallow restarting a program once abandoned to reflect real-world constraints.
+* Allow for program entry and exit over time to capture the dynamic nature of program availability and effectiveness.
+* Analyze the sensitivity of the simulation to varying the environment's hyperparameters, $\boldsymbol{\xi}$, to better understand the robustness of the results to different parameter settings.
+* Consider offline policy calculation methods (e.g., deep reinforcement learning) to further optimize policy performance.
 
+<!-- Moral uncertainty, ambguity, and moral weights -->
 
+These enhancements can help to make the simulation model more accurate and reflective of real-world complexities, and enable the development of more effective policies for decision-making in the context of Effective Altruism funding.
+
+[^tuning]: It should be mentioned that in this experiment I did not attempt simulations very varying values of the prior hyperparameters, $\boldsymbol{\xi}$, or the PFT-DPW algorithm hyperparameters.
+
+{{< pagebreak >}}
 
 ```{r}
 #| eval: false
