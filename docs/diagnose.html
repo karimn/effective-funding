@@ -148,7 +148,7 @@ div.csl-indent {
 <li>Determining which programs to re-evaluate in order to incrementally improve the decision-making process for program selection (i), by updating information and adjusting funding allocations accordingly.</li>
 </ol>
 <p>By investigating and evaluating various decision-making policies within this framework, the study aims to contribute insights into how organizations can make more informed and effective funding decisions in the realm of Effective Altruism, with the ultimate goal of maximizing positive impact and optimizing resource allocation for charitable purposes.</p>
-<p>The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.</p>
+<div class="page-columns page-full"><p>The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.</p><div class="no-row-height column-margin column-container"><span class="">Focusing on epistemic uncertainty and ignoring moral uncertainty.</span></div></div>
 <div class="page-columns page-full"><p>The funder’s problem is modeled as a bandit problem, but without the restriction of only being able to evaluate implemented programs. Each program is assumed to target a particular population without any overlap, and the cost of implementation is held fixed and equal for all programs. There are no new programs entering the problem over time. The state of each program varies over time and is drawn from a hierarchical and stationary program hyperstate, which determines the data generating process for observed data when a program is evaluated.</p><div class="no-row-height column-margin column-container"><span class=""><em>State</em> here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observed data when a program is evaluated.</span></div></div>
 <p>While the optimal method to select a program for implementation is a probabilistic one, taking into account the distribution of counterfactual quantities and any available prior information, I also consider the commonly used null hypothesis significance testing (NHST) approach.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> However, my focus is not on comparing the probabilistic and NHST decision rules, but rather on the sequential nature of these decisions in the presence of heterogeneity in program effectiveness. I aim to examine the potential to improve welfare by enhancing the planning scheme used to select programs for re-evaluation, which I refer to as the <em>meta-problem</em>.</p>
 <p>My objective is not to identify the optimal policy, but rather to explore the potential for welfare improvement using alternative policies to those conventionally used. It’s important to note that I am simplifying these policies for tractability and not considering all their complexities and context-specific adjustments that expert decision-makers may introduce. Nevertheless, I believe this study captures the essence of how conventionally used policies may underperform in certain scenarios.</p>
@@ -190,18 +190,18 @@ div.csl-indent {
 </div>
 </div>
 <p>The funder is never aware of the true state of the world — the true counterfactual model of all programs’ effectiveness — but they are able to evaluate a program by collecting experimental data and updating their beliefs. I assume that the funder has an initial observation (data from an evaluation) for each program under consideration. This could be data from an earlier experiment or could represent the agent’s prior beliefs.</p>
-<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-utility-fig_effaf12ea5315783d3369e222a8c56e5">
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-utility-fig_8536ba9b123a1bf1d0a75cb7502ccbda">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-utility-fig" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="diagnose_files/figure-html/fig-utility-fig-1.png" class="img-fluid figure-img" width="384"></p>
-<p></p><figcaption class="figure-caption">Figure&nbsp;2: The exponential utility function, <span class="math display">\[U(y;\alpha) = 1 - e^{- \alpha y},\]</span> where <span class="math inline">\(\alpha\)</span> represents the degree of risk aversion. In this study, we have <span class="math inline">\(\alpha = 0.25\)</span>.</figcaption><p></p>
+<p></p><figcaption class="figure-caption">Figure&nbsp;2: The exponential utility function, <span class="math inline">\(U(y;\alpha) = 1 - e^{- \alpha y},\)</span> where <span class="math inline">\(\alpha\)</span> represents the degree of risk aversion. In this study, we have <span class="math inline">\(\alpha = 0.25\)</span>.</figcaption><p></p>
 </figure>
 </div>
 </div></div></div>
 <p>Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a <em>utility function</em>. The program outcomes mentioned above are in terms of an abstract quantity (e.g., income). A utility function means that there is a possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility (even if has relatively lower cost-effectiveness) or to implement programs with lower uncertainty. The utility function used is the <em>exponential utility</em> function.</p>
-<div class="page-columns page-full"><p>If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, <span class="math inline">\(\mu_{kt} + z\cdot \tau_{kt}\)</span> and <span class="math inline">\(\sigma_k\)</span>, respectively, the expected utility would be as in <a href="#fig-state-util-example">Figure&nbsp;3</a>.</p><div class="no-row-height column-margin column-container"><span class="">Ignoring moral uncertainty.</span></div></div>
+<p>If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, <span class="math inline">\(\mu_{kt} + z\cdot \tau_{kt}\)</span> and <span class="math inline">\(\sigma_k\)</span>, respectively, the expected utility would be as in <a href="#fig-state-util-example">Figure&nbsp;3</a>.</p>
 <div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-state-util-example_627ccd2afa5dda34ec5e6852095643ac">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-state-util-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
@@ -621,7 +621,7 @@ The main goal of this simulation study is to analyze the sequential decision pro
 
 By investigating and evaluating various decision-making policies within this framework, the study aims to contribute insights into how organizations can make more informed and effective funding decisions in the realm of Effective Altruism, with the ultimate goal of maximizing positive impact and optimizing resource allocation for charitable purposes.
 
-The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
+The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain[Focusing on epistemic uncertainty and ignoring moral uncertainty.]{.aside} impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
 
 The funder's problem is modeled as a bandit problem, but without the restriction of only being able to evaluate implemented programs. Each program is assumed to target a particular population without any overlap, and the cost of implementation is held fixed and equal for all programs. There are no new programs entering the problem over time. The state of each program varies over time and is drawn from a hierarchical and stationary program hyperstate, which determines the data generating process for observed data when a program is evaluated.[_State_ here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observed data when a program is evaluated.]{.aside} 
 
@@ -709,10 +709,10 @@ quarto-executable-code-5450563D
 
 ```r
 #| label: fig-utility-fig
-#| fig-cap: The exponential utility function, $$U(y;\alpha) = 1 - e^{- \alpha y},$$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
+#| fig-cap: The exponential utility function, $U(y;\alpha) = 1 - e^{- \alpha y},$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
 #| fig-cap-location: bottom
 #| fig-width: 4
-#| fig-height: 4
+#| fig-height: 3
 #| column: margin
 
 utility &lt;- function(c, alpha) 1 - exp(-alpha * c)
@@ -729,7 +729,7 @@ crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |&gt;
 ``` 
 Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a _utility function_. The program outcomes mentioned above are in terms of an abstract quantity (e.g., income). A utility function means that there is a possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility (even if has relatively lower cost-effectiveness) or to implement programs with lower uncertainty. The utility function used is the _exponential utility_ function.
 
-If there is uncertainty[Ignoring moral uncertainty.]{.aside} in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. 
+If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. 
 
 quarto-executable-code-5450563D
 

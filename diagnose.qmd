@@ -88,7 +88,7 @@ The main goal of this simulation study is to analyze the sequential decision pro
 
 By investigating and evaluating various decision-making policies within this framework, the study aims to contribute insights into how organizations can make more informed and effective funding decisions in the realm of Effective Altruism, with the ultimate goal of maximizing positive impact and optimizing resource allocation for charitable purposes.
 
-The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
+The problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain[Focusing on epistemic uncertainty and ignoring moral uncertainty.]{.aside} impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
 
 The funder's problem is modeled as a bandit problem, but without the restriction of only being able to evaluate implemented programs. Each program is assumed to target a particular population without any overlap, and the cost of implementation is held fixed and equal for all programs. There are no new programs entering the problem over time. The state of each program varies over time and is drawn from a hierarchical and stationary program hyperstate, which determines the data generating process for observed data when a program is evaluated.[_State_ here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observed data when a program is evaluated.]{.aside} 
 
@@ -170,10 +170,10 @@ The funder is never aware of the true state of the world --- the true counterfac
 
 ```{r}
 #| label: fig-utility-fig
-#| fig-cap: The exponential utility function, $$U(y;\alpha) = 1 - e^{- \alpha y},$$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
+#| fig-cap: The exponential utility function, $U(y;\alpha) = 1 - e^{- \alpha y},$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
 #| fig-cap-location: bottom
 #| fig-width: 4
-#| fig-height: 4
+#| fig-height: 3
 #| column: margin
 
 utility <- function(c, alpha) 1 - exp(-alpha * c)
@@ -190,7 +190,7 @@ crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |>
 ``` 
 Finally, in evaluating which program to implement the agent is assumed to be maximizing welfare measured using a _utility function_. The program outcomes mentioned above are in terms of an abstract quantity (e.g., income). A utility function means that there is a possibility of risk aversion and diminishing marginal utility: that it might be more optimal to increase the utility of those with a lower baseline utility (even if has relatively lower cost-effectiveness) or to implement programs with lower uncertainty. The utility function used is the _exponential utility_ function.
 
-If there is uncertainty[Ignoring moral uncertainty.]{.aside} in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. 
+If there is uncertainty in the outcomes or there is variability in outcomes in the population, we would want to work with expected utilities. For example, given some means and standard deviations of outcomes over time, $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility would be as in @fig-state-util-example. 
 
 ```{r}
 #| label: fig-state-util-example
