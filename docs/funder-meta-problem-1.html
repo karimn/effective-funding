@@ -144,7 +144,7 @@ div.csl-indent {
 
 </header>
 
-<div class="cell" data-hash="diagnose_cache/html/load-sim-data_e0beba43087c07d63126d5d9bdbac01b">
+<div class="cell" data-hash="funder-meta-problem-1_cache/html/load-sim-data_1e747f6773051d454686de2dc1524c1e">
 
 </div>
 <section id="introduction" class="level1 page-columns page-full" data-number="1">
@@ -187,34 +187,34 @@ div.csl-indent {
 \end{align*}
 \]</span> where <span class="math inline">\(\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})\)</span> are the hyperparameters of the environment. This means that while each program has a fixed average baseline outcome, <span class="math inline">\(\mu_k\)</span>, and average treatment effect, <span class="math inline">\(\tau_k\)</span>, at every step, normally distributed shocks alter the realized averages. </p><div class="no-row-height column-margin column-container"><span class="">With some abuse of notation, I will write <span class="math inline">\(\boldsymbol{\theta_{kt}\sim\theta_k}\)</span> and <span class="math inline">\(\boldsymbol{\theta_k\sim\boldsymbol{\xi}}\)</span>.</span></div></div>
 <div class="page-columns page-full"><p>In this environment, the hierarchical structure of the hyperstate represents the inherent heterogeneity of program effectiveness over time, highlighting the limitations of relying solely on a single evaluation of a program at a particular point in time. The assumption is made that this variation in effectiveness follows a purely oscillatory pattern without any trends. While funders should also be concerned about variations in effectiveness when programs are implemented in different contexts, this aspect is ignored in this simplified environment, assuming that the time variation captures the general problem of heterogeneity over time and context. As the states in the hyperstate vary randomly and independently, the objective of the funder is to learn about the underlying hyperstate, rather than predicting the next realized state.</p><div class="no-row-height column-margin column-container"><span class="">Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.</span><span class="">Future iterations of this model could introduce some correlation between states over time.</span></div></div>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-states-example_ee2a21eea6d22058e580bb725f80c377">
+<div class="cell page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-states-example_2f62a2e5079baaf9afabf3d2ffee806f">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-states-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-states-example-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-states-example-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;1: Population outcomes over time for 10 example programs. Ribbons represent the mean outcome <span class="math inline">\(\pm \sigma_p\)</span>.</figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
 <p>The funder is never aware of the true state of the world — the true counterfactual model of all programs’ effectiveness — but they are able to evaluate a program by collecting data and updating their beliefs. I assume that the funder has an initial observation for each program under consideration. This could be data from an earlier experiment or could represent the funder’s or other experts’ prior beliefs.</p>
-<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-utility-fig_4dd10d58e440b9084ffba11f66182630">
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-utility-fig_9f7e872d79047dba64dd8702ecbb7a7f">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-utility-fig" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="diagnose_files/figure-html/fig-utility-fig-1.png" class="img-fluid figure-img" width="288"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-utility-fig-1.png" class="img-fluid figure-img" width="288"></p>
 <p></p><figcaption class="figure-caption">Figure&nbsp;2: The exponential utility function, <span class="math inline">\(U(y;\alpha) = 1 - e^{- \alpha y},\)</span> where <span class="math inline">\(\alpha\)</span> represents the degree of risk aversion. In this study, we have <span class="math inline">\(\alpha = 0.25\)</span>.</figcaption><p></p>
 </figure>
 </div>
 </div></div></div>
 <p>In the evaluation of which program to implement, the agent is assumed to be maximizing welfare, which is measured using a utility function. The program outcomes, as mentioned earlier, are represented in terms of an abstract quantity, such as income. By incorporating a utility function, the analysis takes into account the possibility of risk aversion and diminishing marginal utility, recognizing that it may be more optimal to prioritize increasing the utility of individuals with lower baseline utility, even if it has relatively lower cost-effectiveness, or to choose programs with lower uncertainty. The utility function used in this study is the <em>exponential utility function</em>.</p>
 <p>When there is uncertainty or variability in the outcomes of different programs, it is important to work with expected utilities to account for this variability. For instance, if we have information on the means and standard deviations of outcomes over time, denoted as <span class="math inline">\(\mu_{kt} + z\cdot \tau_{kt}\)</span> and <span class="math inline">\(\sigma_k\)</span>, respectively, the expected utility can be calculated as in <a href="#fig-state-util-example">Figure&nbsp;3</a>.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-state-util-example_627ccd2afa5dda34ec5e6852095643ac">
+<div class="cell page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-state-util-example_e7f1d6186e38ef34f706c6c5369f9b0b">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-state-util-example" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-state-util-example-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-state-util-example-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;3: Population expected utility over time for 10 example programs. <span class="math inline">\(E_{Y_{kt}\sim\boldsymbol{\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\alpha(\mu_{kt} + z\cdot\tau_{kt}) + \alpha^2 \sigma_k^2/2}\)</span>.</figcaption><p></p>
 </figure>
 </div>
@@ -253,11 +253,11 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 <li><em>Particle Filter Tree with Progressive Depth Widening (PFT-DPW)</em>, where we use an offline Monte Carlo Tree Search (MCTS) policy variant, to select the program to evaluate <span class="citation" data-cites="Sunberg2018">(<a href="#ref-Sunberg2018" role="doc-biblioref">Sunberg and Kochenderfer 2018</a>)</span>.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></li>
 </ol>
 <p>For all the policies being experimented with, we maintain a belief about the expected utility of implementation counterfactuals. We use a hierarchical Bayesian posterior to represent our updated beliefs for all the policies. For the PFT-DPW policy, we use a particle filter to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-actions_922187f39f50ec08b36068319d47076e">
+<div class="cell page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-actions_53aab292b532da9b56a32a1ae556556f">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-actions" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-actions-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-actions-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;4: Evaluate and implement actions over <span class="math inline">\(K = 15\)</span> steps for five example episodes (rows). For each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of <em>ex ante</em> optimality.</figcaption><p></p>
 </figure>
 </div>
@@ -276,22 +276,22 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 \max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}).
 \]</span></span></div></div>
 <p>To assess the performance of the policies, we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In Figure <a href="#fig-returns-compare">Figure&nbsp;5</a>, we can observe how this difference evolves over the <span class="math inline">\(T\)</span> steps of all the simulation episodes. We can see that the PFT-DPW and Bayesian evaluate-second-best policies perform the best, with higher accumulated discounted utility compared to other policies. The frequentist policies and the random Bayesian policy show lower performance. The no-evaluation policy, where decisions are made based only on the initial belief <span class="math inline">\(b_0\)</span>, performs the worst among all the policies.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-returns-compare_93fcec54606543bfe76cdb4eb698bc15">
+<div class="cell page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-returns-compare_717c4ebe7c60aac80c45a2ec7c7012b8">
 <div class="cell-output-display page-columns page-full">
 <div id="fig-returns-compare" class="quarto-figure quarto-figure-center anchored page-columns page-full">
 <figure class="figure page-columns page-full">
-<p><img src="diagnose_files/figure-html/fig-returns-compare-1.png" class="img-fluid figure-img" width="768"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-returns-compare-1.png" class="img-fluid figure-img" width="768"></p>
 <p></p><figcaption class="figure-caption margin-caption">Figure&nbsp;5: Mean accumulated discounted utility gains, compared to a no program implementation policy, <span class="math display">\[\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi^\emptyset),\]</span> where <span class="math inline">\(\pi^\emptyset(b) = (0,0),\forall b.\)</span></figcaption><p></p>
 </figure>
 </div>
 </div>
 </div>
-<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-returns-percent-compare_65bd719d3d9102edcc8b99ead2324231">
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-returns-percent-compare_6de1d5a620c36d18a5e7c97ccf627f14">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-returns-percent-compare" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="diagnose_files/figure-html/fig-returns-percent-compare-1.png" class="img-fluid figure-img" width="288"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-returns-percent-compare-1.png" class="img-fluid figure-img" width="288"></p>
 <p></p><figcaption class="figure-caption">Figure&nbsp;6: Percentage increase in mean accumulated discounted utility gain, <span class="math inline">\(\frac{\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi')}{\widetilde{W}_T(\pi')}.\)</span></figcaption><p></p>
 </figure>
 </div>
@@ -300,23 +300,23 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 </section>
 <section id="conclusion" class="level1 page-columns page-full" data-number="6">
 <h1 data-number="6"><span class="header-section-number">6</span> Conclusion</h1>
-<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="diagnose_cache/html/fig-step1-returns_97712e05c777c513c79f963d41b695f0">
+<div class="cell fig-cap-location-bottom page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-step1-returns_dcb3a6c6cf034ee51a5b59ed548ad0d1">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-step1-returns" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="diagnose_files/figure-html/fig-step1-returns-1.png" class="img-fluid figure-img" width="288"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-step1-returns-1.png" class="img-fluid figure-img" width="288"></p>
 <p></p><figcaption class="figure-caption">Figure&nbsp;7: The distribution of utility gains at <span class="math inline">\(t = 1\)</span>, comparing the hypothetical best policy, the frequentist policy, and the Bayesian policy.</figcaption><p></p>
 </figure>
 </div>
 </div></div></div>
 <p>In conclusion, through the construction of a simple simulacrum of the problem faced by an Effective Altruism funder and the consideration of planning policies over time, it is evident that there is a significant gap in accumulated welfare between the more naive versions of policies and the more probabilistic and sophisticated policies. This gap becomes more pronounced when we consider the sequential problem, as opposed to the one-shot problem. For instance, in <a href="#fig-step1-returns">Figure&nbsp;7</a>, we can see that there is little difference between a frequentist NHST policy and a probabilistic one in the first step. However, as more steps are taken, differences between the policies become apparent, underscoring the importance of considering the longer-term implications of planning policies.</p>
-<div class="cell page-columns page-full" data-hash="diagnose_cache/html/fig-returns-compare-include-best_3614bc4530feab58d8c3eb371fbd6b1e">
+<div class="cell page-columns page-full" data-hash="funder-meta-problem-1_cache/html/fig-returns-compare-include-best_617e061cfacc6fed9490bb3e86d8210e">
 
 <div class="no-row-height column-margin column-container"><div class="cell-output-display">
 <div id="fig-returns-compare-include-best" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="diagnose_files/figure-html/fig-returns-compare-include-best-1.png" class="img-fluid figure-img" width="288"></p>
+<p><img src="funder-meta-problem-1_files/figure-html/fig-returns-compare-include-best-1.png" class="img-fluid figure-img" width="288"></p>
 <p></p><figcaption class="figure-caption">Figure&nbsp;8: Mean accumulated discounted utility gains, compared to a no program implementation policy.</figcaption><p></p>
 </figure>
 </div>
@@ -339,7 +339,7 @@ G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\
 <!-- Moral uncertainty, ambguity, and moral weights -->
 <p>These enhancements can help to make the simulation model more accurate and reflective of real-world complexities, and enable the development of more effective policies for decision-making in the context of Effective Altruism funding.</p>
 <div style="page-break-after: always;"></div>
-<div class="cell" data-hash="diagnose_cache/html/unnamed-chunk-19_503af6afa00f86a239087083c4905516">
+<div class="cell" data-hash="funder-meta-problem-1_cache/html/unnamed-chunk-19_d7936891ba6f096b6ce57d4250dc0c2a">
 
 </div>
 
