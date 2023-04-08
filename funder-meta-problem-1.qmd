@@ -16,7 +16,7 @@ execute:
 knitr:
   opts_chunk: 
     cache: true 
-abstract: This study utilizes a simulation model to examine the impact of planning policies over time for an Effective Altruism funder focused on maximizing welfare through intervention selection. The results reveal a significant disparity in accumulated welfare between naive policies, such as relying on a single study to forms beliefs about effectiveness, and more advanced probabilistic policies that optimize re-evaluation timing. This gap being more pronounced in sequential decision-making scenarios. Despite considering multiple factors and relying on a simplified model of the funders environment, the disparity between the best-performing policy and the hypothetical optimal policy remains substantial, indicating potential areas for improvement.  
+abstract: This study utilizes a simulation model to examine the impact of planning policies over time for an Effective Altruism funder focused on maximizing welfare through intervention selection. The results reveal a significant disparity in accumulated welfare between naive policies, such as relying on a single study to form beliefs about effectiveness, and more advanced probabilistic policies that optimize re-evaluation timing. This gap is more pronounced in sequential decision-making scenarios. Despite considering multiple factors and relying on a simplified model of the funder's environment, the disparity between the best-performing policy and the hypothetical optimal policy remains substantial, indicating potential areas for improvement. 
 
 ---
 
