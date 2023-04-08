@@ -218,7 +218,7 @@ Now that the environment in which the funder operates has been described, the pr
 (i) Select one program to fund (i.e., to implement) or none.
 (ii) Select one program to evaluate or none.
 
-At every time step $t$, the agent must choose a tuple $(m,v)$ from the action set $$\mathcal{A} = {(m,v): m, v\in \mathcal{K}\cup{0}},$$ where $m$ represents the program to be funded (with $0$ representing no program), and $v$ represents the program to be evaluated (with $0$ representing no evaluation).
+At every time step $t$, the agent must choose a tuple $(m,v)$ from the action set $$\mathcal{A} = \{(m,v): m, v\in \mathcal{K}\cup\{0\}\},$$ where $m$ represents the program to be funded (with $0$ representing no program), and $v$ represents the program to be evaluated (with $0$ representing no evaluation).
 
 This presents a relatively simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program. Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states, we can reformulate our problem to use the funder's _beliefs_ about parameters of the programs' causal models as the state [@Morales2020;@Kochenderfer2022]. 
 
