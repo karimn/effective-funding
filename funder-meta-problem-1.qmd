@@ -11,6 +11,9 @@ format:
     fig-width: 8 
     toc: true
     toc-location: left
+  pdf:
+    number-sections: true
+    fig-width: 8 
 execute: 
   echo: false
 knitr:
