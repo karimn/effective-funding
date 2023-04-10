@@ -1,0 +1,561 @@
+---
+title: The Funder's Meta-Problem 
+author: 
+  - name: Karim Naguib
+    email: karimn2.0@gmail.com
+date: 4/8/2023 
+format: 
+  html:
+    number-sections: true
+    code-tools: true
+    fig-width: 8 
+    toc: true
+    toc-location: left
+  pdf:
+    number-sections: true
+    fig-width: 8 
+execute: 
+  echo: false
+knitr:
+  opts_chunk: 
+    cache: true 
+abstract: This study utilizes a simulation model to examine the impact of planning policies over time for an Effective Altruism funder focused on maximizing welfare through intervention selection. The results reveal a significant disparity in accumulated welfare between naive policies, such as relying on a single study to form beliefs about effectiveness, and more advanced probabilistic policies that optimize re-evaluation timing. This gap is more pronounced in sequential decision-making scenarios. Despite considering multiple factors and relying on a simplified model of the funder's environment, the disparity between the best-performing policy and the hypothetical optimal policy remains substantial, indicating potential areas for improvement. 
+
+---
+
+```{r}
+#| label: r-setup
+#| include: false
+
+library(JuliaCall)
+library(tidyverse)
+library(posterior)
+library(tidybayes)
+
+theme_set(theme_minimal())
+```
+
+```{julia}
+#| label: julia-setup
+#| include: false
+
+import Pkg
+Pkg.activate(".")
+
+using FundingPOMDPs
+using MCTS, POMDPs, D3Trees, ParticleFilters, Distributions
+using DataFrames, DataFramesMeta
+using Pipe, Serialization
+
+import SplitApplyCombine
+
+include("diag_util.jl")
+```
+
+```{julia}
+#| label: params
+#| include: false
+
+sim_file_suffix = "_1000"
+util_model = ExponentialUtilityModel(0.25)
+discount = 0.95
+accum_rewards = true 
+maxstep = 15
+use_ex_ante_reward = true 
+nprograms = 10
+actlist = @pipe SelectProgramSubsetActionSetFactory(nprograms, 1) |> FundingPOMDPs.actions(_).actions
+```
+
+```{r}
+#| include: false
+
+maxstep <- julia_eval("maxstep")
+nprograms <- julia_eval("nprograms")
+discount <- julia_eval("discount")
+
+plan_labels <- c("no impl" = "No Implementation", none = "No Evaluation", random = "Random (Bayesian)", freq = "Random (Frequentist)", evalsecond = "Evaluate Second Best (Bayesian)",
+                 freq_evalsecond = "Evaluate Second Best (Frequentist)", pftdpw = "PFT-DPW", best = "Hypothetical Best")
+```
+
+```{julia}
+#| label: load-sim-data
+#| output: false
+
+all_sim_data = deserialize("temp-data/sim$(sim_file_suffix).jls") 
+```
+
+# Introduction
+
+The main goal of this simulation study is to analyze the sequential decision problem encountered by organizations involved in evaluating and funding charities from the perspective of Effective Altruism, which seeks to maximize the positive impact of donations on a global scale. In particular, the study aims to compare different decision-making policies for two key tasks:
+
+(i) Selecting programs to fund from a list of programs for which effectiveness is only partially observable, taking into account the inherent uncertainties in program outcomes and impact.
+(ii) Determining which programs to re-evaluate in order to incrementally improve the decision-making process for program selection (i), by updating information and adjusting funding allocations accordingly.
+
+By investigating and evaluating various decision-making policies within this framework, the study aims to contribute insights into how organizations can make more informed and effective funding decisions, with the ultimate goal of maximizing positive impact and optimizing resource allocation for charitable purposes.
+
+My objective is not to identify the optimal policy, but rather to explore the potential for welfare improvement using alternative policies to those conventionally used. It's important to note that I am simplifying these policies for tractability and not considering all their complexities and context-specific adjustments that expert decision-makers may introduce. Nevertheless, I believe this study captures the essence of how conventionally used policies may underperform in certain scenarios.
+
+Specifically, I aim to highlight the limitations of the following policies: (a) never re-evaluating programs and relying solely on initial evaluations, (b) randomly re-evaluating programs, and (c) using null hypothesis significance testing (NHST) in a simple heuristic policy. I will compare these conventional policies against policies that utilize a partially observable Markov decision process (POMDP) algorithm and a simple heuristic policy that uses Bayesian hierarchical models. Through my analysis, I have found that the alternative policies are able to increase accumulated discounted utility by at least 20 percent after a few steps. 
+
+Furthermore, it is important to highlight that while the framework of the implementation-evaluation problem in this study draws inspiration from the decision-making challenges faced by funding organizations in the realm of international development and global health charities, it is also relevant to the broader context of Effective Altruism. The decision problems faced by Effective Altruism practitioners often involve complex trade-offs and uncertainties, and the insights gained from this study may have broader implications for decision-making in these domains as well.
+
+The funder's problem is modeled as a sequence of decisions made at discrete intervals, given a finite set of programs with uncertain[Focusing on epistemic uncertainty and ignoring moral uncertainty.]{.aside} impact on a set of populations. The funder selects optimal programs to implement based on their beliefs about the counterfactual outcomes of these programs for their targeted populations, and decides what data to collect to update these beliefs for the next decision point. The environment and problem are intentionally kept simple to ensure tractability, with the understanding that further studies may revisit these assumptions iteratively.
+
+Thus the problem is modeled as a bandit problem, but without the restriction of only being able to evaluate implemented programs. Each program is assumed to target a particular population without any overlap, and the cost of implementation is held fixed and equal for all programs. There are no new programs entering the problem over time. The state of each program varies over time and is drawn from a hierarchical and stationary program hyperstate, which determines the data generating process for observed data when a program is evaluated.[_State_ here refers to the causal model determining outcome counterfactuals depending on whether a program is implemented or not. It is the data generating process from which we observe data when a program is evaluated.]{.aside} 
+
+While the optimal method to select a program for implementation is a probabilistic one, taking into account the distribution of counterfactual quantities and any available prior information, I also consider the commonly used null hypothesis significance testing (NHST) approach.[^bayes-vs-freq] However, my focus is not on comparing the probabilistic and NHST decision rules, but rather on the sequential nature of these decisions in the presence of heterogeneity in program effectiveness. I aim to examine the potential to improve welfare by enhancing the planning scheme used to select programs for re-evaluation, which I refer to as the _meta-problem_.
+
+
+<!-- Explain how the time hierarchy is similar to the context one. -->
+
+[^bayes-vs-freq]: Given a risk-neutral utility function and very weakly informed priors, both these methods are often assumed to result in very similar decisions. However, a winning entry in [GiveWell's](http://givewell.com) [Change Our Minds Context](https://blog.givewell.org/2022/12/15/change-our-mind-contest-winners/) by @Haber2022 showed that threshold-based method, like NHST, suffers from bias caused by the winner's curse phenomenon. A big difference between what I am investigating here and Haber's work is that I am looking beyond the one-shot accept/reject decision.
+
+
+# The Environment
+
+As mentioned previously, in this study, a simplified environment is utilized while striving to capture the most relevant aspects of the real-world context. The funder is assumed to be faced with a set of programs, denoted as $\mathcal{K}$, and must decide which program(s) to fund and which program(s) to re-evaluate.[$\mathcal{K} = \{1,\ldots,K\}$. In this study, $K = 10$.]{.aside} This decision needs to be made repeatedly over a series of steps.
+
+The environment is modeled as a multi-armed bandit (MAB) framework, where each program or intervention is represented as a bandit with a stochastic causal model. In the sequential environment, at each step, a new _state_ is drawn from a _hyperstate_ that determines the outcomes of the targeted population. This hyperstate is used to simulate the underlying uncertainty and variability of real-world interventions, capturing the inherent uncertainties in program outcomes and their effects on the population.[This is a broad simplification. In reality, we would distinguish between _programs_ and _populations_; different programs can be effective in different populations and a program could simultaneously target different populations.]{.aside}
+
+By employing a MAB framework and incorporating hyperstates, this study aims to capture the dynamic nature of decision-making in funding programs, where the funder must adapt and update their choices over time based on changing states and outcomes. This approach allows for exploring different decision-making policies and their impact on program selection and re-evaluation, in order to optimize resource allocation and improve the effectiveness of charitable funding decisions. 
+
+For each program $k$, we model the data generating process for each individual's outcome at step $t$ as,
+
+$$
+\begin{align*}
+  Y_{t}(z) &\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
+  \\
+  \mu_{kt} &\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
+  \tau_{kt} &\sim \mathtt{Normal}(\tau_k, \eta^\tau_k)
+\end{align*}
+$$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
+where $z$ is a binary variable indicating whether a program is implemented or not, which means $\tau_{kt}$ is the average treatment effect. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
+
+On the other hand, the hyperstate for each program, $\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
+$$
+\begin{align*}
+  \mu_k &\sim \mathtt{Normal}(0, \xi^\mu) \\
+  \tau_k &\sim \mathtt{Normal}(0, \xi^\tau) \\
+  \sigma_k &\sim \mathtt{Normal}^+(0, \xi^\sigma) \\
+  \eta^\mu_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\mu}) \\
+  \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
+\end{align*}
+$$ 
+where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters of the environment. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step, normally distributed shocks alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
+
+In this environment, the hierarchical structure of the hyperstate represents the inherent heterogeneity of program effectiveness over time, highlighting the limitations of relying solely on a single evaluation of a program at a particular point in time. The assumption is made that this variation in effectiveness follows a purely oscillatory pattern without any trends. While funders should also be concerned about variations in effectiveness when programs are implemented in different contexts[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}, this aspect is ignored in this simplified environment, assuming that the time variation captures the general problem of heterogeneity over time and context. As the states in the hyperstate vary randomly and independently, the objective of the funder is to learn about the underlying hyperstate, rather than predicting the next realized state.[Future iterations of this model could introduce some correlation between states over time.]{.aside} 
+
+```{julia}
+#| label: states-example-data
+#| include: false
+
+ep1_states = @pipe [@transform!(DataFrame(s.programstates), :t = t) for (t,s) in enumerate(all_sim_data.state[1])] |> 
+  vcat(_...) |> 
+  select(_, Not(:progdgp))
+```
+
+```{r}
+#| label: fig-states-example
+#| fig-cap: "Population outcomes over time for 10 example programs. Ribbons represent the mean outcome $\\pm \\sigma_p$."
+#| cap-location: margin
+
+ep1_states <- julia_eval("ep1_states") |> 
+  transmute(programid, t, outcome_control = μ, outcome_treated = outcome_control + τ, sd = σ) |> 
+  pivot_longer(starts_with("outcome_"), names_to = "z", names_prefix = "outcome_", values_to = "outcome") 
+
+ep1_states |> 
+  filter(t <= 15) |>  
+  ggplot(aes(t, outcome)) +
+  geom_line(aes(color = z)) +
+  geom_ribbon(aes(ymin = outcome - sd, ymax = outcome + sd, fill = z), alpha = 0.1) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Outcomes", x = "", y = "Y") +
+  facet_wrap(vars(programid), ncol = 5) +
+  theme(legend.position = "top")
+```
+
+The funder is never aware of the true state of the world --- the true counterfactual model of all programs' effectiveness --- but they are able to evaluate a program by collecting data and updating their beliefs. I assume that the funder has an initial observation for each program under consideration. This could be data from an earlier experiment or could represent the funder's or other experts' prior beliefs.
+
+```{r}
+#| label: fig-utility-fig
+#| fig-cap: The exponential utility function, $U(y;\alpha) = 1 - e^{- \alpha y},$ where $\alpha$ represents the degree of risk aversion. In this study, we have $\alpha = 0.25$.
+#| fig-cap-location: bottom
+#| fig-width: 3
+#| fig-height: 3
+#| column: margin
+
+utility <- function(c, alpha) 1 - exp(-alpha * c)
+expected_utility <- function(mu, sd, alpha) 1 - exp(-alpha * mu + alpha^2 * sd^2 / 2)
+
+crossing(a = seq(0, 0.5, 0.125/2), c = seq(-4, 4, 0.1)) |> 
+  mutate(u = utility(c, a)) |> 
+  ggplot(aes(c, u)) +
+  geom_line(data = \(x) filter(x, a == 0.25)) +
+  geom_line(aes(group = a), alpha = 0.1) +
+  labs(x = "y", y = "U(y)") +
+  coord_cartesian(ylim = c(-2, 0.5)) +
+  NULL
+``` 
+In the evaluation of which program to implement, the agent is assumed to be maximizing welfare, which is measured using a utility function. The program outcomes, as mentioned earlier, are represented in terms of an abstract quantity, such as income. By incorporating a utility function, the analysis takes into account the possibility of risk aversion and diminishing marginal utility, recognizing that it may be more optimal to prioritize increasing the utility of individuals with lower baseline utility, even if it has relatively lower cost-effectiveness, or to choose programs with lower uncertainty. The utility function used in this study is the _exponential utility function_.
+
+When there is uncertainty or variability in the outcomes of different programs, it is important to work with expected utilities to account for this variability. For instance, if we have information on the means and standard deviations of outcomes over time, denoted as $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility can be calculated as in @fig-state-util-example. 
+
+```{r}
+#| label: fig-state-util-example
+#| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y_{kt}\\sim\\boldsymbol{\\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\\alpha(\\mu_{kt} + z\\cdot\\tau_{kt}) + \\alpha^2 \\sigma_k^2/2}$."
+#| cap-location: margin
+
+ep1_states |> 
+  mutate(eu = expected_utility(outcome, sd, 0.25)) |> 
+  filter(t <= 15) |>  
+  ggplot(aes(t, eu)) +
+  geom_line(aes(color = z)) +
+  scale_color_discrete("", labels = str_to_title, aesthetics = c("color", "fill")) +
+  labs(title = "Program Expected Utility", x = "", y = "E[U(Y)]") +
+  facet_wrap(vars(programid), ncol = 5) +
+  theme(legend.position = "top")
+```
+
+# The Problem {#sec-problem}
+
+Now that the environment in which the funder operates has been described, the problem they are trying to solve can be addressed. The funder is confronted with a set of $K$ programs and must make two decisions, taking two actions:
+
+(i) Select one program to fund (i.e., to implement) or none.
+(ii) Select one program to evaluate or none.
+
+At every time step $t$, the agent must choose a tuple $(m,v)$ from the action set $$\mathcal{A} = \{(m,v): m, v\in \mathcal{K}\cup\{0\}\},$$ where $m$ represents the program to be funded (with $0$ representing no program), and $v$ represents the program to be evaluated (with $0$ representing no evaluation).
+
+This presents a simpler problem than is typical of a multi-armed bandit problem; there is no real trade-off to make here between choosing the optimal program to fund and gathering more information on which is the optimal program. Nevertheless, we are confronted by an _evaluative_ problem such that we must choose how to gather information most effectively. Furthermore, while a typical multi-armed bandit problem is not viewed as _sequential_ in the sense that an action at any step does not change future states, we can reformulate our problem to use the funder's _beliefs_ about parameters of the programs' causal models as the state [@Morales2020;@Kochenderfer2022]. 
+
+In that case, the problem is now a _Markov decision process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
+$$
+\begin{align*}
+V_\pi(b_{t-1}) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t})\right]p(o\mid\boldsymbol{\theta}, a_t)b_{t-1}(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
+a_t &= \pi(b_t) \\
+R(a, \boldsymbol{\theta}) &= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\boldsymbol{\theta}_k}\left[U(Y_{k}(a^m_k))\right], 
+\end{align*}
+$${#eq-problem}[In this simulation study we set the discount rate to $\gamma = 0.95$.]{.aside}
+
+where $o \in \mathcal{O}$ is the data collected based on the evaluation action for a particular program, and using it we update $b_{t-1}$ to $b_{t}$.
+
+So given the current belief $b_{t-1}$ and the policy $\pi$, the agent estimates both the immediate reward and future discounted rewards -- given an updated belief $b_{t}$ continguent on the data collected $o$ -- and so forth recursively. Based on this the accumulated returns would be 
+$$
+G_{\pi,t:T} = \sum_{r=t}^T \gamma^{r-t}E_{\boldsymbol{\theta}_r\sim b_{r-1}}[R(\pi(b_{r-1}), \boldsymbol{\theta}_r)],
+$$
+where $T$ is the terminal step.[In this study, I use $T = 15$.]{.aside}  
+
+Unlike a typical MDP, the agent in this case does not observe the actual realized reward at each step, but must estimate it conditional on their beliefs. Program implementers do not automatically receive a reliable signal on the observed and counterfactual rewards. This is an important aspect of the funder's problem: while in an MDP, we would normally observe a reward for the selected action, or some noisy version of it; in the funder's environment, all rewards are inferred.[Also different from a MDP: we receive utility from every program, or rather from the population it targets.]{.aside}
+
+# The Plans
+
+Now, let's discuss the policies that will be evaluated as part of the funder's meta-problem:
+
+1. _No evaluation_, where we never re-evaluate any of the programs and only use our initial beliefs, denoted as $b_0$, to decide which program to implement.
+2. _Random evaluation_, where at every time step $t$, we randomly select one of the $K$ programs to be evaluated. For example, this happens if studies are conducted by researchers in an unplanned manner. 
+3. _Evaluate second-best_, where at every time step $t$, we select the program that has the second highest estimated reward for evaluation.
+4. _Particle Filter Tree with Progressive Depth Widening (PFT-DPW)_, where we use an offline Monte Carlo Tree Search (MCTS) policy variant, to select the program to evaluate [@Sunberg2018].[^pftdpw]
+
+For all the policies being experimented with, we maintain a belief about the expected utility of implementation counterfactuals. We use a hierarchical Bayesian posterior to represent our updated beliefs for all the policies. For the PFT-DPW policy, we use a particle filter to efficiently manage these beliefs as we iteratively build a tree of action-observation-belief trajectories.
+
+```{julia}
+#| label: rewards-and-actions 
+#| include: false
+
+all_rewards = @pipe all_sim_data |> 
+    @subset(_, :plan_type .== "none") |> 
+    get_rewards_data.(_.state, Ref(actlist), Ref(util_model)) |>
+    [@transform!(rd[2], :sim = rd[1]) for rd in enumerate(_)] |>
+    vcat(_...) |>
+    insertcols!(_, :reward_type => "actual")
+
+obs_act = @pipe all_sim_data |> 
+  @rsubset(_, :plan_type in ["pftdpw", "random", "freq", "evalsecond", "freq_evalsecond"]) |> 
+  groupby(_, :plan_type) |> 
+  combine(_, d -> vcat(get_actions_data.(d.action)..., source = :sim)) 
+```
+
+```{r}
+#| label: ex-ante-reward
+#| include: false
+
+all_rewards <- julia_eval("all_rewards") 
+obs_act <- julia_eval("obs_act") |> 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
+
+ex_ante_reward_data <- all_rewards |> 
+  filter(step == maxstep) |> 
+  select(!step) |> 
+  group_by(sim) |> 
+  mutate(
+    ex_ante_best = ex_ante_reward >= max(ex_ante_reward),
+    reward_rank = min_rank(ex_ante_reward) - 1
+  ) |> 
+  ungroup()  
+```
+
+```{r}
+#| label: fig-actions
+#| fig-cap: "Evaluate and implement actions over $K = 15$ steps for five example episodes (rows). For each episode, we observe how the different policies behave (columns). The plot has been arranged such that the y-axis is in ascending order of _ex ante_ optimality."
+#| fig-cap-location: margin
+
+obs_act |>
+  filter(between(sim, 1, 5)) |> 
+  pivot_longer(c(implement_programs, eval_programs), names_to = "action_type", names_pattern = r"{(.+)_programs}", values_to = "pid") |> 
+  left_join(ex_ante_reward_data, by = c("sim", "pid" = "actprog")) |>
+  ggplot(aes(step, reward_rank, color = action_type)) +
+  geom_step(alpha = 0.5) +
+  geom_point(size = 0.85) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("", breaks = 0:nprograms, c(0, 10)) +
+  scale_color_discrete("Action Type", labels = c(eval = "Evaluation", implement = "Implementation")) +
+  facet_grid(cols = vars(plan_type), rows = vars(sim), scales = "free_y", labeller = labeller(plan_type = plan_labels)) +
+  theme(panel.grid.minor = element_blank(), axis.text = element_blank(), legend.position = "top", strip.text.y.right = element_blank(), strip.text.x.top = element_text(size = 7),
+        axis.ticks = element_blank())
+```
+
+For the random and evaluate-second-best policies, I also consider a simple frequentist NHST approach. This involves running a regression on all the observed data, testing whether the treatment effect is statistically significant at the 10 percent level, and assuming the point estimate to be the true treatment effect if it is statistically significant, and assuming it to be zero otherwise. It's important to note that using frequentist inference in this context essentially ignores uncertainty, but we still use the expected utility based on $\sigma$. This form of inference is intended to highlight the limitations of binary decision-making based solely on statistical significance tests or arbitrary thresholds, instead of quantifying uncertainty. Although this approach is a simplification, it helps keep the argument intuitive.
+
+<!-- [GiveWell in fact look at point estimates of cost-effectiveness and use a threshold of some multiple of the cost-effectiveness of GiveDirectly, a cash transfer program. They also use subjective adjustments to the point estimates to account for uncertainty.]{.aside}   -->
+
+The motivation for selecting these policies/algorithms/heuristics is not to determine an optimal one, but rather to compare and contrast commonly used approaches. Specifically, the frequentist no-evaluation and random policies are chosen as they closely resemble the practices often employed by funders and implementers in real-world scenarios.
+
+So given this set of policies, $\Pi$, the meta-problem that we want to solve is choosing the best policy,
+$$
+\max_{\pi \in \Pi} W_T(\pi) = E_{\boldsymbol{\theta}\sim\boldsymbol{\xi}}\left\{ \sum_{t=1}^T\gamma^{t-1}E_{\boldsymbol{\theta}_t\sim\boldsymbol{\theta}}[R(\pi(b_t), \boldsymbol{\theta}_t)] \right\}. 
+$${#eq-meta-problem}
+Notice how this differs from the funder's problem in @eq-problem: here we assume we know the hyperstates and states which we draw from the prior, $\boldsymbol{\xi}$, not from beliefs, $b$.
+
+[^pftdpw]: The PFT-DPW algorithm is a hybrid approach for solving partially observable Markov decision processes (POMDPs) that combines particle filtering and tree-based search. It represents belief states using a tree data structure and uses double progressive widening to selectively expand promising regions of the belief state space. Particle weights are used to represent the probabilities of different belief states, and these weights are updated through the particle filtering and tree expansion process. Actions are selected based on estimated belief state values, and the tree is pruned to keep it computationally efficient.   
+ 
+# Results
+
+```{julia}
+#| label: prepare-util-data
+#| include: false
+
+do_nothing_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |> 
+  get_do_nothing_plan_data(_, util_model) 
+
+do_best_reward = @pipe @subset(all_sim_data, :plan_type .== "none") |>
+    dropmissing(_, :state) |> 
+    @select(
+        _,
+        :actual_reward = map(get_program_reward, :state),
+        :actual_ex_ante_reward = map(s -> get_program_reward(s, eval_getter = dgp), :state),
+        :plan_type = "best"
+    )
+
+util_data = @pipe all_sim_data |> 
+    vcat(_, do_best_reward, do_nothing_reward, cols = :union) |> 
+    @select!(_, :plan_type, :actual_reward, :actual_ex_ante_reward, :step = repeat([collect(1:maxstep)], length(:plan_type))) |> 
+    groupby(_, :plan_type) |> 
+    transform!(_, eachindex => :sim) |> 
+    flatten(_, Not([:plan_type, :sim]))
+```
+
+```{r}
+#| label: util-diff-data
+#| include: false
+
+util_data <- julia_eval("util_data") |> 
+  mutate(plan_type = factor(plan_type, levels = names(plan_labels)))
+
+n_episodes <- filter(util_data, step == 1, fct_match(plan_type, "none")) |> nrow()
+
+vn_util_diff <- util_data |> 
+  unnest(c(actual_reward, actual_ex_ante_reward)) |> 
+  pivot_longer(!c(sim, plan_type, step), names_to = "reward_type", names_pattern = r"{actual_(.*)_reward}", values_to = "reward") |> 
+  mutate(reward_type = coalesce(reward_type, "ex_post")) %>%  
+  left_join(filter(., fct_match(plan_type, "no impl")) |> select(!plan_type), by = c("reward_type", "sim", "step"), suffix = c("", "_no_impl")) |> 
+  filter(!fct_match(plan_type, "no impl")) |> 
+  mutate(reward_diff = reward - reward_no_impl) |> 
+  arrange(step) |> 
+  group_by(plan_type, reward_type, sim) |> 
+  mutate(
+    discounted_reward_diff = (discount^(step - 1)) * reward_diff,
+    accum_reward_diff = cumsum(reward_diff),
+    discounted_accum_reward_diff = cumsum(discounted_reward_diff)
+  ) |> 
+  ungroup() |> 
+  pivot_longer(c(reward_diff, discounted_reward_diff, accum_reward_diff, discounted_accum_reward_diff), values_to = "reward_diff") |> 
+  mutate(
+    accum = str_detect(name, fixed("accum")),
+    discounted = str_detect(name, fixed("discounted"))
+  ) |> 
+  select(!name)
+```
+
+In this simulation experiment, we run a total of $S = r n_episodes$ episodes.^[Why not more? Each simulated episode can be time-consuming, especially when using the PFT-DPW policy which involves 1,000 iterations at every step before selecting a program for evaluation. Even simpler policies, such as the random policies, take time when updating beliefs using a Bayesian model that fits all the observed data for a program at every evaluation.] For each episode, we draw $K$ hyperstates from the prior, denoted as $\boldsymbol{\theta}_s\sim\boldsymbol{\xi}$, and then for each step within the episode, we draw states denoted as $\boldsymbol{\theta}_{st}\sim\boldsymbol{\theta}_s$. Next, we apply each of our policies to this episode, making decisions on which programs to implement and which ones to evaluate in order to update beliefs $b{st}$. This allows us to observe the trajectory of $(b_{s,0}, a_{s,1}, o_{s,1}, b_{s,1}, a_{s,2}, o_{s,2}, b_{s,2},\ldots)$ for each policy, given the same states and hyperstates.[We actually solve @eq-meta-problem as 
+$$
+\max_{\pi \in \Pi} \widetilde{W}_T(\pi) = \frac{1}{S} \sum_{s=1}^S \sum_{t=1}^T\gamma^{t-1}R(\pi(b_{st}), \boldsymbol{\theta}_{st}). 
+$$]{.aside}  
+
+To assess the performance of the policies, we compare their mean accumulated discounted utility to the same quantity when none of the programs are implemented. In Figure @fig-returns-compare, we can observe how this difference evolves over the $T$ steps of all the simulation episodes. We can see that the PFT-DPW and Bayesian evaluate-second-best policies perform the best, with higher accumulated discounted utility compared to other policies. The frequentist policies and the random Bayesian policy show lower performance. The no-evaluation policy, where decisions are made based only on the initial belief $b_0$, performs the worst among all the policies.
+
+```{r}
+#| label: fig-returns-compare
+#| fig-cap: Mean accumulated discounted utility gains, compared to a no program implementation policy, $$\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi^\emptyset),$$ where $\pi^\emptyset(b) = (0,0),\forall b.$ 
+#| fig-cap-location: margin
+
+vn_util_diff |>
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "freq", "random", "none", "evalsecond", "freq_evalsecond")), fct_match(reward_type, "ex_post")) |> 
+  ggplot(aes(step)) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("Mean Accumulated Utility Gains", breaks = seq(0, 2, 0.1)) +
+  #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
+  scale_color_discrete(
+    "Policy", 
+    labels = plan_labels, 
+    aesthetics = c("color", "fill")
+  ) +
+  # facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  # labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
+  theme(panel.grid.minor.x = element_blank()) +
+  guides(linetype = "none") +
+  NULL
+```
+
+```{r}
+#| label: fig-returns-percent-compare
+#| fig-width: 3
+#| fig-height: 3
+#| fig-cap: Percentage increase in mean accumulated discounted utility gain, $\frac{\widetilde{W}_T(\pi) - \widetilde{W}_T(\pi')}{\widetilde{W}_T(\pi')}.$
+#| fig-cap-location: bottom
+#| column: margin 
+
+vn_util_diff |>
+  filter(accum, discounted, fct_match(plan_type, c("pftdpw", "random", "none")), fct_match(reward_type, "ex_post")) |> 
+  group_by(plan_type, step) |> 
+  summarize(mean_reward_diff = mean(reward_diff), .groups = "drop") |>
+  pivot_wider(id_cols = step, names_from = plan_type, values_from = mean_reward_diff) |> 
+  pivot_longer(c(none, random), names_to = "baseline_policy", values_to = "baseline") |> 
+  mutate(gain_per = (pftdpw - baseline) / baseline) |>  
+  ggplot(aes(step)) +
+  geom_line(aes(y = gain_per, color = baseline_policy)) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("", labels = scales::label_percent()) +
+  scale_color_discrete("Compared to", labels = plan_labels) +
+  theme(panel.grid.minor.x = element_blank(), legend.position = "top", legend.direction = "vertical") +
+  guides(linetype = "none") +
+  NULL
+```
+To provide a clearer comparison, we calculate the percentage difference between the highest performing policies and two baseline policies: (i) the no-evaluation policy, and (ii) the random Bayesian policy (which is roughly on par with the random frequentist policy). When compared to the policy of never re-evaluating a program once it is selected for implementation, we observe that the Bayesian evaluate-second-best and the PFT-DPW offline policies show an average accumulated welfare that is more than 20 percent higher after four episode steps, and surpasses 30 percent after seven steps. In comparison to the frequentist policies (evaluate-second-best and random), the highest performing policies show around 20 percent improvement after five steps.
+
+
+# Conclusion
+
+```{r}
+#| label: fig-step1-returns
+#| fig-cap: "The distribution of utility gains at $t = 1$, comparing the hypothetical best policy, the frequentist policy, and the Bayesian policy."
+#| fig-cap-location: bottom
+#| fig-width: 3
+#| fig-height: 2
+#| column: margin 
+
+vn_util_diff |>
+  filter(step == 1, accum, discounted, fct_match(plan_type, c("best", "random", "freq")), fct_match(reward_type, "ex_post")) |> 
+  ggplot(aes(x = plan_type)) +
+  #tidybayes::stat_pointinterval(aes(x = reward_diff), point_interval = mean_qi, .width = 0.0) +
+  tidybayes::stat_dist_halfeye(aes(y = reward_diff), alpha = 0.25, .width = c(0.5, 0.8)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  scale_x_discrete(
+    "", 
+    labels = c("best" = "Best", "freq" = "Frequentist", random = "Random")
+  ) +
+  scale_y_continuous("") +
+  #labs(title = "Accumulated Utility Improvement Compared to No Implementation", subtitle = "First Step Only") +
+  #facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  coord_cartesian(ylim = c(-0.75, 0.75)) +
+  NULL
+```
+In conclusion, through the construction of a simple simulacrum of the problem faced by an Effective Altruism funder and the consideration of planning policies over time, it is evident that there is a significant gap in accumulated welfare between the more naive versions of policies and the more probabilistic and sophisticated policies. This gap becomes more pronounced when we consider the sequential problem, as opposed to the one-shot problem. For instance, in @fig-step1-returns, we can see that there is little difference between a frequentist NHST policy and a probabilistic one in the first step. However, as more steps are taken, differences between the policies become apparent, underscoring the importance of considering the longer-term implications of planning policies.
+
+```{r}
+#| label: fig-returns-compare-include-best
+#| fig-width: 3
+#| fig-height: 4
+#| fig-cap: Mean accumulated discounted utility gains, compared to a no program implementation policy.
+#| column: margin
+
+vn_util_diff |>
+  filter(accum, discounted, fct_match(plan_type, c("evalsecond", "best")), fct_match(reward_type, "ex_post")) |> 
+  ggplot(aes(step)) +
+  tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Mean"), .width = 0.0, linewidth = 0.25, point_interval = mean_qi) +
+  # tidybayes::stat_lineribbon(aes(y = reward_diff, fill = plan_type, color = plan_type, linetype = "Median"), .width = 0.0, linewidth = 0.25, point_interval = median_qi) +
+  scale_x_continuous("Step", breaks = seq(maxstep)) +
+  scale_y_continuous("Mean Accumulated Utility Gains", breaks = seq(0, 2, 0.2)) +
+  #scale_linetype_manual("", values = c("Mean" = "dashed", "Median" = "solid")) +
+  scale_color_discrete(
+    "Policy", 
+    labels = plan_labels, 
+    aesthetics = c("color", "fill")
+  ) +
+  # facet_wrap(vars(reward_type), ncol = 1, scales = "free_y", labeller = as_labeller(c(ex_ante = "ex ante", ex_post = "ex post"))) +
+  # labs(title = "Accumulated Utility Improvement Compared to No Implementation") +
+  theme(panel.grid.minor.x = element_blank(), legend.position = "top", legend.direction = "vertical") +
+  guides(linetype = "none") +
+  NULL
+```
+Even considering these factors, the gap between our best performing policy and the best possible hypothetical policy remains substantial (as seen in @fig-returns-compare-include-best). This suggests that there is likely more room for improvement in order to approach an optimal approach[^tuning]. 
+
+Here are some possibilities for enhancing this study to better reflect real-world environments and develop more effective policies (in no particular order):
+
+* Introduce varying program costs to consider the question of cost-effectiveness, as the cost of implementing different programs can have a significant impact on decision-making.
+* Explore how the concept of leverage could influence policy decisions, as certain programs may have a greater ability to leverage resources and create broader impact.
+* Allow for different population sizes in the simulation, as population size can affect the scalability and impact of interventions.
+ * Consider the potential for programs to target multiple populations with some correlation, and for populations to support multiple programs with potential complementarity and substitution effects, as this can reflect the complexity and interrelatedness of real-world scenarios.
+* Incorporate non-stationarity into the hyperstates, effectively adding correlation between steps and potentially improving predictions and the need for re-evaluation, as real-world environments are dynamic and evolve over time.
+* Account for potential diminishing treatment effects over time as the control outcome moves closer to the treatment level, as this can affect the long-term effectiveness of interventions.
+* Consider the quality of programs or population compliance and how it may vary over time, as program quality and population behavior can impact outcomes in real-world scenarios.
+* Explore differences in evaluations for implemented programs versus non-implemented ones, as this can introduce potential scale effects and reflect the challenges of transitioning from proof-of-concept studies to scaled programs.
+* Restrict the implementation action choices to prevent rapid changes between programs due to fixed costs, as it may not always be feasible to shut down and resume programs in quick succession. For example, disallow restarting a program once abandoned to reflect real-world constraints.
+* Allow for program entry and exit over time to capture the dynamic nature of program availability and effectiveness.
+* Analyze the sensitivity of the simulation to varying the environment's hyperparameters, $\boldsymbol{\xi}$, to better understand the robustness of the results to different parameter settings.
+* Consider offline policy calculation methods (e.g., deep reinforcement learning) to further optimize policy performance.
+
+<!-- Moral uncertainty, ambguity, and moral weights -->
+
+These enhancements can help to make the simulation model more accurate and reflective of real-world complexities, and enable the development of more effective policies for decision-making in the context of Effective Altruism funding.
+
+[^tuning]: It should be mentioned that in this experiment I did not attempt simulations very varying values of the prior hyperparameters, $\boldsymbol{\xi}$, or the PFT-DPW algorithm hyperparameters.
+
+{{< pagebreak >}}
+
+```{r}
+#| eval: false
+
+test_data <- julia_eval("test_data")
+
+library(cmdstanr)
+library(posterior)
+
+sim_model <-cmdstan_model("../FundingPOMDPs.jl/stan/sim_model.stan")
+
+test_stan_data <- lst(
+  fit = TRUE, sim = FALSE, sim_forward = FALSE,
+  n_control_sim = 0,
+  n_treated_sim = 0,
+  n_study = 1,
+  study_size = 50,
+  y_control = test_data |> filter(!t) |> pull(y),
+  y_treated = test_data |> filter(t) |> pull(y),
+ 
+  sigma_eta_inv_gamma_priors = TRUE, 
+  mu_sd = 1,
+  tau_mean = 0,
+  tau_sd = 0.5,
+  sigma_sd = 0,
+  eta_sd = c(0, 0, 0),
+  sigma_alpha = 18.5,
+  sigma_beta = 30,
+  eta_alpha = 26.4,
+  eta_beta = 20
+)
+
+fit <- sim_model$sample(test_stan_data, parallel_chains = 4)
+
+dr <- as_draws_rvars(fit)
+
+```

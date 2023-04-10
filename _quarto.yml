@@ -1,0 +1,4 @@
+project:
+  type: website
+  output-dir: docs
+bibliography: /home/karim/Documents/library.bib
