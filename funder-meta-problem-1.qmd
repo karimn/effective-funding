@@ -121,18 +121,16 @@ By employing a MAB framework and incorporating hyperstates, this study aims to c
 
 For each program $k$, we model the data generating process for each individual's outcome at step $t$ as,
 
-$$
 \begin{align*}
   Y_{t}(z) &\sim \mathtt{Normal}(\mu_{k[i],t} + z\cdot \tau_{k[i],t}, \sigma_{k[i]}) \\
   \\
   \mu_{kt} &\sim \mathtt{Normal}(\mu_k, \eta^\mu_k) \\
   \tau_{kt} &\sim \mathtt{Normal}(\tau_k, \eta^\tau_k)
 \end{align*}
-$$ [For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
+[For simplicity, $\sigma_k$ is homoskedastic and does not vary over time.]{.aside}
 where $z$ is a binary variable indicating whether a program is implemented or not, which means $\tau_{kt}$ is the average treatment effect. We therefore denote the state of a program to be $\boldsymbol{\theta}_{kt} = (\mu_{kt}, \tau_{kt}, \sigma_k)$. 
 
 On the other hand, the hyperstate for each program, $\boldsymbol{\theta}_k = (\mu_k, \tau_k, \sigma_k, \eta^\mu_k, \eta^\tau_k)$, is drawn from the prior 
-$$
 \begin{align*}
   \mu_k &\sim \mathtt{Normal}(0, \xi^\mu) \\
   \tau_k &\sim \mathtt{Normal}(0, \xi^\tau) \\
@@ -140,7 +138,6 @@ $$
   \eta^\mu_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\mu}) \\
   \eta^\tau_k &\sim \mathtt{Normal}^+(0, \xi^{\eta^\tau}), \\
 \end{align*}
-$$ 
 where $\boldsymbol{\xi} = (\xi^\mu, \xi^\tau, \xi^\sigma, \xi^{\eta^\mu}, \xi^{\eta^\tau})$ are the hyperparameters of the environment. This means that while each program has a fixed average baseline outcome, $\mu_k$, and average treatment effect, $\tau_k$, at every step, normally distributed shocks alter the realized averages. [With some abuse of notation, I will write $\boldsymbol{\theta_{kt}\sim\theta_k}$ and $\boldsymbol{\theta_k\sim\boldsymbol{\xi}}$.]{.aside} 
 
 In this environment, the hierarchical structure of the hyperstate represents the inherent heterogeneity of program effectiveness over time, highlighting the limitations of relying solely on a single evaluation of a program at a particular point in time. The assumption is made that this variation in effectiveness follows a purely oscillatory pattern without any trends. While funders should also be concerned about variations in effectiveness when programs are implemented in different contexts[Context here refers to geography or populations. Meta-analyses are typically aimed at understanding the generalizability of evaluations between contexts.]{.aside}, this aspect is ignored in this simplified environment, assuming that the time variation captures the general problem of heterogeneity over time and context. As the states in the hyperstate vary randomly and independently, the objective of the funder is to learn about the underlying hyperstate, rather than predicting the next realized state.[Future iterations of this model could introduce some correlation between states over time.]{.aside} 
@@ -201,7 +198,7 @@ In the evaluation of which program to implement, the agent is assumed to be maxi
 When there is uncertainty or variability in the outcomes of different programs, it is important to work with expected utilities to account for this variability. For instance, if we have information on the means and standard deviations of outcomes over time, denoted as $\mu_{kt} + z\cdot \tau_{kt}$ and $\sigma_k$, respectively, the expected utility can be calculated as in @fig-state-util-example. 
 
 ```{r}
-#| label: fig-state-util-example
+#| label: fig-state-util-example 
 #| fig-cap: "Population expected utility over time for 10 example programs. $E_{Y_{kt}\\sim\\boldsymbol{\\theta_{kt}}}[U(Y_{kt}(z))] = 1 - e^{-\\alpha(\\mu_{kt} + z\\cdot\\tau_{kt}) + \\alpha^2 \\sigma_k^2/2}$."
 #| cap-location: margin
 
@@ -229,11 +226,13 @@ This presents a simpler problem than is typical of a multi-armed bandit problem;
 
 In that case, the problem is now a _Markov decision process_ (MDP). The agent needs a _policy_, $\pi(b)$, that selects what action to take given the belief $b_t(\boldsymbol{\theta})$ over the continuous space of possible states.[Let the states of all the programs be $\boldsymbol{\theta}_t = (\boldsymbol{\theta}_{kt})_{k\in\mathcal{K}}$.]{.aside} Putting this together we get the _state-value_ function
 $$
-\begin{align*}
+\begin{equation*}
+\begin{aligned}
 V_\pi(b_{t-1}) &= \int_{\Theta,\mathcal{O}} \left[R(a_t, \boldsymbol{\theta}) + \gamma V_\pi(b_{t})\right]p(o\mid\boldsymbol{\theta}, a_t)b_{t-1}(\boldsymbol{\theta})\,\textrm{d}\boldsymbol{\theta}\textrm{d}o \\ \\
 a_t &= \pi(b_t) \\
 R(a, \boldsymbol{\theta}) &= E_{Y\sim\boldsymbol{\theta}}[U(Y(a))] = \sum_{k\in\mathcal{K}} E_{Y_k\sim\boldsymbol{\theta}_k}\left[U(Y_{k}(a^m_k))\right], 
-\end{align*}
+\end{aligned}
+\end{equation*}
 $${#eq-problem}[In this simulation study we set the discount rate to $\gamma = 0.95$.]{.aside}
 
 where $o \in \mathcal{O}$ is the data collected based on the evaluation action for a particular program, and using it we update $b_{t-1}$ to $b_{t}$.
