@@ -2,3 +2,7 @@ project:
   type: website
   output-dir: docs
 bibliography: /home/karim/Documents/library.bib
+
+website:
+  title: "Karim Naguib"
+  google-analytics: "G-SQNTJM494V"
