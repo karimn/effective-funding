@@ -1,5 +1,7 @@
 ---
 title: The Funder's Meta-Problem 
+aliases: 
+  - index.html
 author: 
   - name: Karim Naguib
     email: karimn2.0@gmail.com
